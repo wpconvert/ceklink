@@ -14,19 +14,90 @@ const themeToggle = document.getElementById("themeToggle");
 const themeIcon = document.getElementById("themeIcon");
 
 
-async function apiRequest(params) {
+function apiRequest(params) {
 
-    const query =
-        new URLSearchParams(params).toString();
+    return new Promise((resolve, reject) => {
 
-    const response =
-        await fetch(`${API_URL}?${query}`);
+        const callbackName =
+            "nawalaCallback_" +
+            Date.now() +
+            "_" +
+            Math.floor(Math.random() * 100000);
 
-    if (!response.ok) {
-        throw new Error("Gagal menghubungi server.");
-    }
+        const script =
+            document.createElement("script");
 
-    return await response.json();
+        const query =
+            new URLSearchParams({
+                ...params,
+                callback: callbackName
+            }).toString();
+
+        const timeout =
+            setTimeout(() => {
+
+                cleanup();
+
+                reject(
+                    new Error(
+                        "Server tidak merespons."
+                    )
+                );
+
+            }, 15000);
+
+
+        window[callbackName] =
+            function(data) {
+
+                clearTimeout(timeout);
+
+                cleanup();
+
+                resolve(data);
+
+            };
+
+
+        function cleanup() {
+
+            delete window[callbackName];
+
+            if (script.parentNode) {
+
+                script.parentNode.removeChild(
+                    script
+                );
+
+            }
+
+        }
+
+
+        script.onerror =
+            function() {
+
+                clearTimeout(timeout);
+
+                cleanup();
+
+                reject(
+                    new Error(
+                        "Gagal menghubungi GAS."
+                    )
+                );
+
+            };
+
+
+        script.src =
+            `${API_URL}?${query}`;
+
+        document.body.appendChild(
+            script
+        );
+
+    });
 }
 
 
@@ -40,7 +111,9 @@ function normalizeUrl(url) {
         !url.startsWith("http://") &&
         !url.startsWith("https://")
     ) {
+
         url = "https://" + url;
+
     }
 
     return url;
@@ -84,7 +157,8 @@ async function loadLinks() {
         }
 
 
-        links = result.data || [];
+        links =
+            result.data || [];
 
 
         render();
@@ -94,7 +168,10 @@ async function loadLinks() {
 
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "LOAD LINKS ERROR:",
+            error
+        );
 
         showMessage(
             "Gagal mengambil data dari server.",
@@ -108,7 +185,9 @@ async function loadLinks() {
 async function addLink() {
 
     const url =
-        normalizeUrl(urlInput.value);
+        normalizeUrl(
+            urlInput.value
+        );
 
 
     if (!url) {
@@ -144,8 +223,11 @@ async function addLink() {
 
         const result =
             await apiRequest({
+
                 action: "add",
+
                 url: url
+
             });
 
 
@@ -175,7 +257,10 @@ async function addLink() {
 
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "ADD LINK ERROR:",
+            error
+        );
 
         showMessage(
             "Gagal menambahkan link.",
@@ -218,7 +303,9 @@ async function deleteLink(id) {
             "Hapus link ini dari monitoring?"
         )
     ) {
+
         return;
+
     }
 
 
@@ -226,8 +313,11 @@ async function deleteLink(id) {
 
         const result =
             await apiRequest({
+
                 action: "delete",
+
                 id: id
+
             });
 
 
@@ -254,7 +344,10 @@ async function deleteLink(id) {
 
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "DELETE LINK ERROR:",
+            error
+        );
 
         showMessage(
             "Gagal menghapus link.",
@@ -275,6 +368,7 @@ function getStatusHTML(status) {
                 NORMAL
             </span>
         `;
+
     }
 
 
@@ -286,6 +380,7 @@ function getStatusHTML(status) {
                 NAWALA
             </span>
         `;
+
     }
 
 
@@ -297,6 +392,7 @@ function getStatusHTML(status) {
                 CHECKING...
             </span>
         `;
+
     }
 
 
@@ -337,6 +433,7 @@ function render() {
                 item =>
                     item.status === filter
             );
+
     }
 
 
@@ -487,8 +584,11 @@ function showMessage(
 
     setTimeout(
         () => {
+
             message.textContent = "";
+
             message.className = "";
+
         },
         3000
     );
@@ -512,31 +612,42 @@ function escapeHtml(value) {
 function loadTheme() {
 
     const savedTheme =
-        localStorage.getItem("nawalaTheme");
+        localStorage.getItem(
+            "nawalaTheme"
+        );
 
 
     if (savedTheme === "dark") {
 
-        document.body.classList.add("dark");
+        document.body.classList.add(
+            "dark"
+        );
 
         themeIcon.textContent = "☀";
 
     } else {
 
-        document.body.classList.remove("dark");
+        document.body.classList.remove(
+            "dark"
+        );
 
         themeIcon.textContent = "☀";
+
     }
 }
 
 
 function toggleTheme() {
 
-    document.body.classList.toggle("dark");
+    document.body.classList.toggle(
+        "dark"
+    );
 
 
     const dark =
-        document.body.classList.contains("dark");
+        document.body.classList.contains(
+            "dark"
+        );
 
 
     localStorage.setItem(
@@ -567,7 +678,9 @@ urlInput.addEventListener(
     event => {
 
         if (event.key === "Enter") {
+
             addLink();
+
         }
 
     }
