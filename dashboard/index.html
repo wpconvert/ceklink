@@ -11,136 +11,116 @@
 
 <body>
 
-    <div class="app">
+    <div class="container">
 
-        <!-- SIDEBAR -->
-        <aside class="sidebar">
-
-            <div class="logo">
-                <div class="logo-icon">N</div>
-
-                <div>
-                    <h2>Nawala</h2>
-                    <span>Monitor</span>
-                </div>
-            </div>
-
-            <nav>
-                <a href="#" class="nav-item active">
-                    <span>▦</span>
-                    Dashboard
-                </a>
-
-                <a href="#" class="nav-item">
-                    <span>🔗</span>
-                    Monitoring
-                </a>
-
-                <a href="#" class="nav-item">
-                    <span>⚙</span>
-                    Pengaturan
-                </a>
-            </nav>
-
-            <div class="sidebar-bottom">
-                <div class="system-status">
-                    <span class="status-dot"></span>
-
+        <header class="header">
+            <div>
+                <div class="brand">
+                    <div class="brand-icon">N</div>
                     <div>
-                        <strong>System Online</strong>
-                        <small>Monitoring aktif</small>
+                        <h1>Nawala Monitor</h1>
+                        <p>Website Monitoring Status Link</p>
                     </div>
                 </div>
             </div>
 
-        </aside>
+            <div class="system">
+                <span class="online-dot"></span>
+                <span>System Online</span>
+            </div>
+        </header>
 
 
-        <!-- MAIN -->
-        <main class="main">
+        <main>
 
-            <!-- TOPBAR -->
-            <header class="topbar">
+            <section class="section dashboard-section">
 
-                <div>
-                    <h1>Dashboard</h1>
-                    <p>Pantau status link secara mudah dan terpusat.</p>
-                </div>
+                <div class="section-title">
+                    <div>
+                        <h2>Dashboard</h2>
+                        <p>Ringkasan status seluruh link yang sedang dipantau.</p>
+                    </div>
 
-                <div class="topbar-right">
-                    <span class="last-update">
-                        Terakhir update:
+                    <div class="last-update">
+                        Update terakhir:
                         <strong id="lastUpdate">-</strong>
-                    </span>
+                    </div>
                 </div>
 
-            </header>
 
+                <div class="stats">
 
-            <!-- STATISTICS -->
-            <section class="stats">
+                    <div class="stat-card">
+                        <div class="stat-top">
+                            <span>Total Link</span>
+                            <div class="stat-icon blue">↗</div>
+                        </div>
 
-                <div class="stat-card">
-                    <div class="stat-icon blue">🔗</div>
-
-                    <div>
-                        <span>Total Link</span>
                         <strong id="totalLinks">0</strong>
+
+                        <small>Link dalam monitoring</small>
                     </div>
-                </div>
 
 
-                <div class="stat-card">
-                    <div class="stat-icon green">✓</div>
+                    <div class="stat-card">
+                        <div class="stat-top">
+                            <span>Normal</span>
+                            <div class="stat-icon green">✓</div>
+                        </div>
 
-                    <div>
-                        <span>Normal</span>
                         <strong id="normalLinks">0</strong>
+
+                        <small>Link dengan status normal</small>
                     </div>
-                </div>
 
 
-                <div class="stat-card">
-                    <div class="stat-icon red">!</div>
+                    <div class="stat-card">
+                        <div class="stat-top">
+                            <span>Nawala</span>
+                            <div class="stat-icon red">!</div>
+                        </div>
 
-                    <div>
-                        <span>Nawala</span>
                         <strong id="blockedLinks">0</strong>
+
+                        <small>Link terdeteksi Nawala</small>
                     </div>
-                </div>
 
 
-                <div class="stat-card">
-                    <div class="stat-icon yellow">◷</div>
+                    <div class="stat-card">
+                        <div class="stat-top">
+                            <span>Belum Dicek</span>
+                            <div class="stat-icon yellow">◷</div>
+                        </div>
 
-                    <div>
-                        <span>Belum Dicek</span>
                         <strong id="uncheckedLinks">0</strong>
+
+                        <small>Menunggu pengecekan</small>
                     </div>
+
                 </div>
 
             </section>
 
 
-            <!-- ADD URL -->
-            <section class="panel add-panel">
+            <section class="section">
 
-                <div class="panel-header">
+                <div class="section-title">
                     <div>
                         <h2>Tambah Link</h2>
-                        <p>Masukkan URL yang ingin dipantau.</p>
+                        <p>Masukkan link yang ingin kamu pantau.</p>
                     </div>
                 </div>
 
-                <div class="add-form">
 
-                    <div class="input-wrapper">
+                <div class="add-box">
+
+                    <div class="url-input">
                         <span>🔗</span>
 
                         <input
                             type="text"
                             id="urlInput"
-                            placeholder="contoh.com atau https://contoh.com"
+                            placeholder="Masukkan URL, contoh: https://example.com"
                             autocomplete="off"
                         >
                     </div>
@@ -159,23 +139,19 @@
             </section>
 
 
-            <!-- MONITORING -->
-            <section class="panel">
+            <section class="section monitoring-section">
 
-                <div class="panel-header monitoring-header">
+                <div class="section-title monitoring-title">
 
                     <div>
-                        <h2>Daftar Monitoring</h2>
-
-                        <p>
-                            Daftar link yang sedang dipantau oleh sistem.
-                        </p>
+                        <h2>Monitoring Link</h2>
+                        <p>Daftar seluruh link yang sedang dipantau.</p>
                     </div>
 
 
-                    <div class="tools">
+                    <div class="monitoring-actions">
 
-                        <div class="search-box">
+                        <div class="search">
                             <span>⌕</span>
 
                             <input
@@ -211,24 +187,20 @@
                 </div>
 
 
-                <div class="table-wrapper">
+                <div class="table-container">
 
                     <table>
 
                         <thead>
-
                             <tr>
                                 <th>LINK</th>
                                 <th>STATUS</th>
                                 <th>TERAKHIR DICEK</th>
                                 <th>AKSI</th>
                             </tr>
-
                         </thead>
 
-                        <tbody id="linkTable">
-
-                        </tbody>
+                        <tbody id="linkTable"></tbody>
 
                     </table>
 
@@ -237,38 +209,26 @@
                         id="emptyState"
                         class="empty-state"
                     >
-
-                        <div class="empty-icon">
-                            🔗
-                        </div>
+                        <div class="empty-icon">🔗</div>
 
                         <h3>Belum ada link</h3>
 
                         <p>
-                            Tambahkan link pertama kamu untuk mulai monitoring.
+                            Tambahkan link di atas untuk mulai monitoring.
                         </p>
-
                     </div>
 
                 </div>
 
             </section>
 
-
-            <!-- FOOTER -->
-            <footer>
-
-                <span>
-                    Nawala Monitor
-                </span>
-
-                <span>
-                    Sistem monitoring link
-                </span>
-
-            </footer>
-
         </main>
+
+
+        <footer>
+            <span>Nawala Monitor</span>
+            <span>Monitoring System</span>
+        </footer>
 
     </div>
 
@@ -277,4 +237,3 @@
 
 </body>
 </html>
-```
