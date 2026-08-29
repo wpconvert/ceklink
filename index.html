@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Trust Monitor - Domain monitoring dashboard">
+    <title>Trust Monitor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="app">
+
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon">
+                    TM
+                </div>
+                <div>
+                    <h2>Trust Monitor</h2>
+                    <span>Domain Security</span>
+                </div>
+            </div>
+
+            <nav class="navigation">
+                <a href="#" class="nav-item active">
+                    <span class="nav-icon">⌂</span>
+                    Dashboard
+                </a>
+
+                <a href="#" class="nav-item">
+                    <span class="nav-icon">◈</span>
+                    Domains
+                </a>
+
+                <a href="#" class="nav-item">
+                    <span class="nav-icon">◷</span>
+                    History
+                </a>
+
+                <a href="#" class="nav-item">
+                    <span class="nav-icon">⚙</span>
+                    Settings
+                </a>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="connection-card">
+                    <div class="connection-status">
+                        <span class="status-dot"></span>
+                        System Online
+                    </div>
+                    <p>Monitoring service is running normally.</p>
+                </div>
+
+                <div class="user-card">
+                    <div class="avatar">A</div>
+                    <div class="user-info">
+                        <strong>Administrator</strong>
+                        <span>admin@monitor.local</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+
+            <header class="topbar">
+                <div class="mobile-brand">
+                    <div class="brand-icon">TM</div>
+                    <strong>Trust Monitor</strong>
+                </div>
+
+                <div class="topbar-right">
+                    <div class="live-indicator">
+                        <span></span>
+                        Live Monitoring
+                    </div>
+
+                    <button class="notification-button">
+                        ♢
+                        <span class="notification-badge">2</span>
+                    </button>
+                </div>
+            </header>
+
+            <section class="content">
+
+                <div class="welcome-section">
+                    <div>
+                        <p class="eyebrow">MONITORING DASHBOARD</p>
+                        <h1>Good morning, Admin 👋</h1>
+                        <p class="welcome-text">
+                            Pantau status domain kamu secara otomatis dalam satu tempat.
+                        </p>
+                    </div>
+
+                    <button class="primary-button" onclick="openModal()">
+                        <span>+</span>
+                        Add Domain
+                    </button>
+                </div>
+
+                <div class="stats-grid">
+
+                    <div class="stat-card">
+                        <div class="stat-top">
+                            <span>Total Domains</span>
+                            <div class="stat-icon blue">◈</div>
+                        </div>
+
+                        <div class="stat-number" id="totalDomains">0</div>
+
+                        <div class="stat-footer">
+                            <span class="stat-neutral">●</span>
+                            Domain terdaftar
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-top">
+                            <span>Normal</span>
+                            <div class="stat-icon green">✓</div>
+                        </div>
+
+                        <div class="stat-number" id="safeDomains">0</div>
+
+                        <div class="stat-footer green-text">
+                            <span>↑</span>
+                            Aman terpantau
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-top">
+                            <span>Blocked</span>
+                            <div class="stat-icon red">!</div>
+                        </div>
+
+                        <div class="stat-number" id="blockedDomains">0</div>
+
+                        <div class="stat-footer red-text">
+                            <span>●</span>
+                            Perlu perhatian
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-top">
+                            <span>Last Check</span>
+                            <div class="stat-icon purple">◷</div>
+                        </div>
+
+                        <div class="stat-number small" id="lastCheck">
+                            Just now
+                        </div>
+
+                        <div class="stat-footer">
+                            <span class="stat-neutral">↻</span>
+                            Monitoring aktif
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="dashboard-grid">
+
+                    <section class="panel domains-panel">
+
+                        <div class="panel-header">
+                            <div>
+                                <h2>Monitored Domains</h2>
+                                <p>Daftar domain yang sedang dipantau.</p>
+                            </div>
+
+                            <button class="secondary-button" onclick="checkAll()">
+                                ↻ Check All
+                            </button>
+                        </div>
+
+                        <div class="toolbar">
+                            <div class="search-box">
+                                <span>⌕</span>
+                                <input
+                                    type="text"
+                                    id="searchInput"
+                                    placeholder="Search domain..."
+                                    oninput="searchDomains()"
+                                >
+                            </div>
+
+                            <select id="filterStatus" onchange="filterDomains()">
+                                <option value="all">All Status</option>
+                                <option value="safe">Normal</option>
+                                <option value="blocked">Blocked</option>
+                                <option value="unknown">Unknown</option>
+                            </select>
+                        </div>
+
+                        <div class="domain-list" id="domainList"></div>
+
+                    </section>
+
+                    <section class="panel activity-panel">
+
+                        <div class="panel-header">
+                            <div>
+                                <h2>Recent Activity</h2>
+                                <p>Aktivitas monitoring terbaru.</p>
+                            </div>
+                        </div>
+
+                        <div class="activity-list" id="activityList"></div>
+
+                    </section>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+        <div class="modal" onclick="event.stopPropagation()">
+
+            <div class="modal-header">
+                <div>
+                    <h2>Add Domain</h2>
+                    <p>Tambahkan domain baru ke monitoring.</p>
+                </div>
+
+                <button class="close-button" onclick="closeModal()">
+                    ×
+                </button>
+            </div>
+
+            <form onsubmit="addDomain(event)">
+
+                <label for="domainInput">
+                    Domain
+                </label>
+
+                <input
+                    type="text"
+                    id="domainInput"
+                    placeholder="example.com"
+                    autocomplete="off"
+                    required
+                >
+
+                <p class="input-help">
+                    Masukkan domain tanpa http:// atau https://
+                </p>
+
+                <div class="modal-actions">
+                    <button
+                        type="button"
+                        class="secondary-button"
+                        onclick="closeModal()"
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="primary-button"
+                    >
+                        Add Domain
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+    <div class="toast" id="toast">
+        <div class="toast-icon">✓</div>
+        <div>
+            <strong id="toastTitle">Success</strong>
+            <span id="toastMessage">Action completed.</span>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
