@@ -1,4 +1,6 @@
-let links = JSON.parse(localStorage.getItem("nawalaLinks")) || [];
+const API_URL = "https://script.google.com/macros/s/AKfycbzn4YCjSJuEcMAGbgvUtwCDjb5s1fYVROVqojWOPzqoc_3z0-5l38joJn6U9wf3TO11/exec";
+
+let links = [];
 
 const urlInput = document.getElementById("urlInput");
 const addButton = document.getElementById("addButton");
@@ -12,15 +14,24 @@ const themeToggle = document.getElementById("themeToggle");
 const themeIcon = document.getElementById("themeIcon");
 
 
-function saveLinks() {
-    localStorage.setItem(
-        "nawalaLinks",
-        JSON.stringify(links)
-    );
+async function apiRequest(params) {
+
+    const query =
+        new URLSearchParams(params).toString();
+
+    const response =
+        await fetch(`${API_URL}?${query}`);
+
+    if (!response.ok) {
+        throw new Error("Gagal menghubungi server.");
+    }
+
+    return await response.json();
 }
 
 
 function normalizeUrl(url) {
+
     url = url.trim();
 
     if (!url) return "";
@@ -37,6 +48,7 @@ function normalizeUrl(url) {
 
 
 function formatTime(timestamp) {
+
     if (!timestamp) return "-";
 
     return new Date(timestamp).toLocaleString(
@@ -52,7 +64,48 @@ function formatTime(timestamp) {
 }
 
 
-function addLink() {
+async function loadLinks() {
+
+    try {
+
+        const result =
+            await apiRequest({
+                action: "list"
+            });
+
+
+        if (!result.success) {
+
+            throw new Error(
+                result.message ||
+                "Gagal mengambil data."
+            );
+
+        }
+
+
+        links = result.data || [];
+
+
+        render();
+
+        updateLastUpdate();
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        showMessage(
+            "Gagal mengambil data dari server.",
+            "error"
+        );
+
+    }
+}
+
+
+async function addLink() {
 
     const url =
         normalizeUrl(urlInput.value);
@@ -84,50 +137,57 @@ function addLink() {
     }
 
 
-    const exists =
-        links.some(
-            item =>
-                item.url.toLowerCase() ===
-                url.toLowerCase()
+    addButton.disabled = true;
+
+
+    try {
+
+        const result =
+            await apiRequest({
+                action: "add",
+                url: url
+            });
+
+
+        if (!result.success) {
+
+            showMessage(
+                result.message ||
+                "Gagal menambahkan link.",
+                "error"
+            );
+
+            return;
+        }
+
+
+        urlInput.value = "";
+
+
+        showMessage(
+            "Link berhasil ditambahkan.",
+            "success"
         );
 
 
-    if (exists) {
+        await loadLinks();
+
+
+    } catch (error) {
+
+        console.error(error);
 
         showMessage(
-            "URL tersebut sudah ada.",
+            "Gagal menambahkan link.",
             "error"
         );
 
-        return;
+
+    } finally {
+
+        addButton.disabled = false;
+
     }
-
-
-    links.unshift({
-
-        id: Date.now(),
-
-        url: url,
-
-        status: "unchecked",
-
-        lastChecked: null
-
-    });
-
-
-    saveLinks();
-
-    urlInput.value = "";
-
-
-    showMessage(
-        "Link berhasil ditambahkan.",
-        "success"
-    );
-
-
-    render();
 }
 
 
@@ -136,46 +196,22 @@ async function checkUrl(id) {
     const link =
         links.find(
             item =>
-                item.id === id
+                String(item.id) ===
+                String(id)
         );
 
 
     if (!link) return;
 
 
-    link.status = "checking";
-
-    render();
-
-
-    await new Promise(
-        resolve =>
-            setTimeout(
-                resolve,
-                1200
-            )
+    showMessage(
+        "Fitur pengecekan Nawala belum diaktifkan.",
+        "error"
     );
-
-
-    link.status =
-        Math.random() < 0.8
-            ? "normal"
-            : "nawala";
-
-
-    link.lastChecked =
-        Date.now();
-
-
-    saveLinks();
-
-    updateLastUpdate();
-
-    render();
 }
 
 
-function deleteLink(id) {
+async function deleteLink(id) {
 
     if (
         !confirm(
@@ -186,16 +222,46 @@ function deleteLink(id) {
     }
 
 
-    links =
-        links.filter(
-            item =>
-                item.id !== id
+    try {
+
+        const result =
+            await apiRequest({
+                action: "delete",
+                id: id
+            });
+
+
+        if (!result.success) {
+
+            showMessage(
+                result.message ||
+                "Gagal menghapus link.",
+                "error"
+            );
+
+            return;
+        }
+
+
+        showMessage(
+            "Link berhasil dihapus.",
+            "success"
         );
 
 
-    saveLinks();
+        await loadLinks();
 
-    render();
+
+    } catch (error) {
+
+        console.error(error);
+
+        showMessage(
+            "Gagal menghapus link.",
+            "error"
+        );
+
+    }
 }
 
 
@@ -313,14 +379,14 @@ function render() {
 
                     <button
                         class="btn-action btn-check"
-                        onclick="checkUrl(${item.id})"
+                        onclick="checkUrl('${item.id}')"
                     >
                         🔍 Cek
                     </button>
 
                     <button
                         class="btn-action btn-delete"
-                        onclick="deleteLink(${item.id})"
+                        onclick="deleteLink('${item.id}')"
                     >
                         🗑 Hapus
                     </button>
@@ -422,6 +488,7 @@ function showMessage(
     setTimeout(
         () => {
             message.textContent = "";
+            message.className = "";
         },
         3000
     );
@@ -521,6 +588,4 @@ filterStatus.addEventListener(
 
 loadTheme();
 
-render();
-
-updateLastUpdate();
+loadLinks();
