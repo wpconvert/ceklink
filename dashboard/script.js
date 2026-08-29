@@ -1,411 +1,653 @@
-let domains = [
-    {
-        id: 1,
-        domain: "example.com",
-        status: "safe",
-        lastChecked: "2 menit lalu"
-    },
-    {
-        id: 2,
-        domain: "abc-example.com",
-        status: "blocked",
-        lastChecked: "5 menit lalu"
-    },
-    {
-        id: 3,
-        domain: "website-demo.net",
-        status: "safe",
-        lastChecked: "8 menit lalu"
-    },
-    {
-        id: 4,
-        domain: "test-domain.id",
-        status: "unknown",
-        lastChecked: "-"
-    }
-];
+```javascript
+/*
+    NAWALA MONITOR
+    =========================
 
-let activities = [
-    {
-        type: "blocked",
-        title: "abc-example.com",
-        message: "Status terdeteksi sebagai terblokir.",
-        time: "5 menit lalu"
-    },
-    {
-        type: "safe",
-        title: "example.com",
-        message: "Pengecekan selesai. Domain normal.",
-        time: "2 menit lalu"
-    },
-    {
-        type: "info",
-        title: "Monitoring Service",
-        message: "Pengecekan otomatis berhasil dijalankan.",
-        time: "10 menit lalu"
-    }
-];
+    Versi awal / prototype.
 
-function renderDomains() {
-    const list = document.getElementById("domainList");
-    const search = document.getElementById("searchInput").value.toLowerCase();
-    const filter = document.getElementById("filterStatus").value;
+    Untuk sekarang status Nawala masih
+    menggunakan simulasi.
 
-    const filtered = domains.filter((item) => {
-        const matchesSearch = item.domain.includes(search);
-        const matchesFilter =
-            filter === "all" || item.status === filter;
+    Nanti fungsi checkUrl() akan kita
+    sambungkan ke backend / sumber
+    pengecekan Komdigi.
+*/
 
-        return matchesSearch && matchesFilter;
-    });
 
-    if (filtered.length === 0) {
-        list.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-icon">⌕</div>
-                <strong>Domain tidak ditemukan</strong>
-                <p>Coba gunakan kata pencarian yang berbeda.</p>
-            </div>
-        `;
-        return;
-    }
+// =========================
+// DATABASE SEMENTARA
+// =========================
 
-    list.innerHTML = filtered.map((item) => {
-        let statusText = "Belum Dicek";
-        let statusClass = "unknown";
-        let statusIcon = "●";
+let links = JSON.parse(
+    localStorage.getItem("nawalaLinks")
+) || [];
 
-        if (item.status === "safe") {
-            statusText = "Normal";
-            statusClass = "safe";
-            statusIcon = "✓";
-        }
 
-        if (item.status === "blocked") {
-            statusText = "Blocked";
-            statusClass = "blocked";
-            statusIcon = "!";
-        }
+// =========================
+// ELEMENT
+// =========================
 
-        return `
-            <div class="domain-row">
-                <div>
-                    <div class="domain-name">${item.domain}</div>
-                    <div class="domain-url">https://${item.domain}</div>
-                </div>
+const urlInput =
+    document.getElementById("urlInput");
 
-                <div>
-                    <div class="status-badge ${statusClass}">
-                        <span>${statusIcon}</span>
-                        ${statusText}
-                    </div>
-                </div>
+const addButton =
+    document.getElementById("addButton");
 
-                <div class="domain-time">
-                    ${item.lastChecked}
-                </div>
+const linkTable =
+    document.getElementById("linkTable");
 
-                <div class="domain-actions">
-                    <button
-                        class="action-button"
-                        onclick="checkDomain(${item.id})"
-                        title="Check domain"
-                    >
-                        ↻
-                    </button>
+const emptyState =
+    document.getElementById("emptyState");
 
-                    <button
-                        class="action-button"
-                        onclick="removeDomain(${item.id})"
-                        title="Remove domain"
-                    >
-                        ×
-                    </button>
-                </div>
-            </div>
-        `;
-    }).join("");
-}
+const searchInput =
+    document.getElementById("searchInput");
 
-function updateStats() {
-    const total = domains.length;
-    const safe = domains.filter(
-        (item) => item.status === "safe"
-    ).length;
+const filterStatus =
+    document.getElementById("filterStatus");
 
-    const blocked = domains.filter(
-        (item) => item.status === "blocked"
-    ).length;
+const message =
+    document.getElementById("message");
 
-    document.getElementById("totalDomains").textContent = total;
-    document.getElementById("safeDomains").textContent = safe;
-    document.getElementById("blockedDomains").textContent = blocked;
-}
 
-function renderActivities() {
-    const list = document.getElementById("activityList");
+// =========================
+// SAVE DATA
+// =========================
 
-    if (activities.length === 0) {
-        list.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-icon">◷</div>
-                <strong>Belum ada aktivitas</strong>
-                <p>Aktivitas monitoring akan muncul di sini.</p>
-            </div>
-        `;
-        return;
-    }
+function saveLinks() {
 
-    list.innerHTML = activities.slice(0, 6).map((item) => {
-        let icon = "i";
-
-        if (item.type === "safe") {
-            icon = "✓";
-        }
-
-        if (item.type === "blocked") {
-            icon = "!";
-        }
-
-        return `
-            <div class="activity-item">
-                <div class="activity-icon ${item.type}">
-                    ${icon}
-                </div>
-
-                <div class="activity-content">
-                    <strong>${item.title}</strong>
-                    <p>${item.message}</p>
-                    <span class="activity-time">${item.time}</span>
-                </div>
-            </div>
-        `;
-    }).join("");
-}
-
-function openModal() {
-    const modal = document.getElementById("modalOverlay");
-    const input = document.getElementById("domainInput");
-
-    modal.classList.add("show");
-
-    setTimeout(() => {
-        input.focus();
-    }, 100);
-}
-
-function closeModal(event) {
-    if (
-        event &&
-        event.target !== document.getElementById("modalOverlay")
-    ) {
-        return;
-    }
-
-    document.getElementById("modalOverlay")
-        .classList.remove("show");
-}
-
-function addDomain(event) {
-    event.preventDefault();
-
-    const input = document.getElementById("domainInput");
-    let domain = input.value.trim().toLowerCase();
-
-    domain = domain
-        .replace(/^https?:\/\//, "")
-        .replace(/\/.*$/, "");
-
-    if (!domain) {
-        return;
-    }
-
-    const exists = domains.some(
-        (item) => item.domain === domain
+    localStorage.setItem(
+        "nawalaLinks",
+        JSON.stringify(links)
     );
+
+}
+
+
+// =========================
+// FORMAT URL
+// =========================
+
+function normalizeUrl(url) {
+
+    url = url.trim();
+
+    if (!url) {
+        return "";
+    }
+
+    if (
+        !url.startsWith("http://") &&
+        !url.startsWith("https://")
+    ) {
+        return "https://" + url;
+    }
+
+    return url;
+
+}
+
+
+// =========================
+// FORMAT TIME
+// =========================
+
+function formatTime(timestamp) {
+
+    if (!timestamp) {
+        return "-";
+    }
+
+    const date =
+        new Date(timestamp);
+
+    return date.toLocaleString(
+        "id-ID",
+        {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+        }
+    );
+
+}
+
+
+// =========================
+// ADD LINK
+// =========================
+
+function addLink() {
+
+    let url =
+        normalizeUrl(
+            urlInput.value
+        );
+
+
+    if (!url) {
+
+        showMessage(
+            "URL tidak boleh kosong.",
+            "error"
+        );
+
+        return;
+    }
+
+
+    try {
+
+        new URL(url);
+
+    } catch {
+
+        showMessage(
+            "Format URL tidak valid.",
+            "error"
+        );
+
+        return;
+    }
+
+
+    // Cek duplikat
+
+    const exists =
+        links.some(
+            item =>
+                item.url.toLowerCase() ===
+                url.toLowerCase()
+        );
+
 
     if (exists) {
-        showToast(
-            "Domain sudah ada",
-            `${domain} sudah masuk monitoring.`
+
+        showMessage(
+            "URL tersebut sudah ada di monitoring.",
+            "error"
         );
+
         return;
     }
 
-    domains.unshift({
-        id: Date.now(),
-        domain: domain,
-        status: "unknown",
-        lastChecked: "-"
-    });
 
-    activities.unshift({
-        type: "info",
-        title: "Domain ditambahkan",
-        message: `${domain} masuk ke daftar monitoring.`,
-        time: "Baru saja"
-    });
+    const newLink = {
 
-    input.value = "";
+        id:
+            Date.now(),
 
-    closeModal();
+        url:
+            url,
 
-    renderAll();
+        status:
+            "unchecked",
 
-    showToast(
-        "Domain berhasil ditambahkan",
-        `${domain} sekarang sedang dimonitor.`
+        lastChecked:
+            null
+
+    };
+
+
+    links.unshift(
+        newLink
     );
+
+
+    saveLinks();
+
+    urlInput.value = "";
+
+    showMessage(
+        "Link berhasil ditambahkan.",
+        "success"
+    );
+
+    render();
+
 }
 
-function removeDomain(id) {
-    const domain = domains.find(
-        (item) => item.id === id
-    );
 
-    if (!domain) {
-        return;
-    }
+// =========================
+// SIMULASI CHECK
+// =========================
 
-    domains = domains.filter(
-        (item) => item.id !== id
-    );
+async function checkUrl(id) {
 
-    activities.unshift({
-        type: "info",
-        title: "Domain dihapus",
-        message: `${domain.domain} dihapus dari monitoring.`,
-        time: "Baru saja"
-    });
-
-    renderAll();
-
-    showToast(
-        "Domain dihapus",
-        `${domain.domain} tidak lagi dimonitor.`
-    );
-}
-
-function checkDomain(id) {
-    const domain = domains.find(
-        (item) => item.id === id
-    );
-
-    if (!domain) {
-        return;
-    }
-
-    const previousStatus = domain.status;
-
-    domain.status =
-        Math.random() > 0.25
-            ? "safe"
-            : "blocked";
-
-    domain.lastChecked = "Baru saja";
-
-    let message =
-        `${domain.domain} selesai diperiksa.`;
-
-    if (
-        previousStatus !== domain.status &&
-        previousStatus !== "unknown"
-    ) {
-        message +=
-            ` Status berubah menjadi ${domain.status}.`;
-    }
-
-    activities.unshift({
-        type: domain.status === "blocked"
-            ? "blocked"
-            : "safe",
-        title: domain.domain,
-        message: message,
-        time: "Baru saja"
-    });
-
-    document.getElementById("lastCheck").textContent =
-        "Just now";
-
-    renderAll();
-
-    if (domain.status === "blocked") {
-        showToast(
-            "⚠️ Domain Blocked",
-            `${domain.domain} terdeteksi terblokir.`
+    const link =
+        links.find(
+            item =>
+                item.id === id
         );
+
+
+    if (!link) {
+        return;
+    }
+
+
+    // Tampilkan checking
+
+    link.status =
+        "checking";
+
+    render();
+
+
+    /*
+        Simulasi proses pengecekan.
+
+        NANTI BAGIAN INI DIGANTI
+        DENGAN API / BACKEND KOMDIGI.
+    */
+
+    await new Promise(
+        resolve =>
+            setTimeout(
+                resolve,
+                1200
+            )
+    );
+
+
+    /*
+        Untuk demo:
+
+        Secara acak menentukan
+        NORMAL atau NAWALA.
+
+        Ini HANYA untuk melihat
+        tampilan dashboard.
+    */
+
+    const random =
+        Math.random();
+
+
+    if (random < 0.8) {
+
+        link.status =
+            "normal";
+
     } else {
-        showToast(
-            "Domain Normal",
-            `${domain.domain} tidak terdeteksi terblokir.`
-        );
+
+        link.status =
+            "nawala";
+
     }
+
+
+    link.lastChecked =
+        Date.now();
+
+
+    saveLinks();
+
+    updateLastUpdate();
+
+    render();
+
 }
 
-function checkAll() {
-    if (domains.length === 0) {
-        showToast(
-            "Tidak ada domain",
-            "Tambahkan domain terlebih dahulu."
+
+// =========================
+// DELETE LINK
+// =========================
+
+function deleteLink(id) {
+
+    const confirmed =
+        confirm(
+            "Hapus link ini dari monitoring?"
         );
+
+
+    if (!confirmed) {
         return;
     }
 
-    domains.forEach((domain) => {
-        domain.status =
-            Math.random() > 0.25
-                ? "safe"
-                : "blocked";
 
-        domain.lastChecked = "Baru saja";
-    });
+    links =
+        links.filter(
+            item =>
+                item.id !== id
+        );
 
-    document.getElementById("lastCheck").textContent =
-        "Just now";
 
-    activities.unshift({
-        type: "info",
-        title: "Full monitoring check",
-        message: `${domains.length} domain berhasil diperiksa.`,
-        time: "Baru saja"
-    });
+    saveLinks();
 
-    renderAll();
+    render();
 
-    showToast(
-        "Check selesai",
-        `${domains.length} domain telah diperiksa.`
+}
+
+
+// =========================
+// STATUS HTML
+// =========================
+
+function getStatusHTML(status) {
+
+    if (status === "normal") {
+
+        return `
+            <span class="status status-normal">
+                <span class="status-dot-small"></span>
+                NORMAL
+            </span>
+        `;
+
+    }
+
+
+    if (status === "nawala") {
+
+        return `
+            <span class="status status-nawala">
+                <span class="status-dot-small"></span>
+                NAWALA
+            </span>
+        `;
+
+    }
+
+
+    if (status === "checking") {
+
+        return `
+            <span class="status status-unchecked">
+                <span class="status-dot-small"></span>
+                CHECKING...
+            </span>
+        `;
+
+    }
+
+
+    return `
+        <span class="status status-unchecked">
+            <span class="status-dot-small"></span>
+            BELUM DICEK
+        </span>
+    `;
+
+}
+
+
+// =========================
+// RENDER TABLE
+// =========================
+
+function render() {
+
+    const search =
+        searchInput.value
+            .toLowerCase()
+            .trim();
+
+    const filter =
+        filterStatus.value;
+
+
+    let filtered =
+        links.filter(
+            item =>
+                item.url
+                    .toLowerCase()
+                    .includes(search)
+        );
+
+
+    if (filter !== "all") {
+
+        filtered =
+            filtered.filter(
+                item =>
+                    item.status === filter
+            );
+
+    }
+
+
+    linkTable.innerHTML = "";
+
+
+    if (filtered.length === 0) {
+
+        emptyState.style.display =
+            "block";
+
+    } else {
+
+        emptyState.style.display =
+            "none";
+
+    }
+
+
+    filtered.forEach(
+        item => {
+
+            const row =
+                document.createElement("tr");
+
+
+            row.innerHTML = `
+
+                <td>
+                    <div class="url-cell">
+                        ${escapeHtml(item.url)}
+                    </div>
+                </td>
+
+                <td>
+                    ${getStatusHTML(item.status)}
+                </td>
+
+                <td>
+                    <span class="time-cell">
+                        ${formatTime(item.lastChecked)}
+                    </span>
+                </td>
+
+                <td>
+
+                    <div class="action-group">
+
+                        <button
+                            class="btn-check"
+                            onclick="checkUrl(${item.id})"
+                        >
+                            🔍 Cek
+                        </button>
+
+                        <button
+                            class="btn-delete"
+                            onclick="deleteLink(${item.id})"
+                        >
+                            🗑 Hapus
+                        </button>
+
+                    </div>
+
+                </td>
+            `;
+
+
+            linkTable.appendChild(row);
+
+        }
     );
+
+
+    updateStatistics();
+
 }
 
-function searchDomains() {
-    renderDomains();
+
+// =========================
+// STATISTICS
+// =========================
+
+function updateStatistics() {
+
+    const total =
+        links.length;
+
+
+    const normal =
+        links.filter(
+            item =>
+                item.status === "normal"
+        ).length;
+
+
+    const nawala =
+        links.filter(
+            item =>
+                item.status === "nawala"
+        ).length;
+
+
+    const unchecked =
+        links.filter(
+            item =>
+                item.status === "unchecked"
+        ).length;
+
+
+    document.getElementById(
+        "totalLinks"
+    ).textContent = total;
+
+
+    document.getElementById(
+        "normalLinks"
+    ).textContent = normal;
+
+
+    document.getElementById(
+        "blockedLinks"
+    ).textContent = nawala;
+
+
+    document.getElementById(
+        "uncheckedLinks"
+    ).textContent = unchecked;
+
 }
 
-function filterDomains() {
-    renderDomains();
+
+// =========================
+// LAST UPDATE
+// =========================
+
+function updateLastUpdate() {
+
+    document.getElementById(
+        "lastUpdate"
+    ).textContent =
+        new Date().toLocaleTimeString(
+            "id-ID",
+            {
+                hour: "2-digit",
+                minute: "2-digit"
+            }
+        );
+
 }
 
-function showToast(title, message) {
-    const toast = document.getElementById("toast");
 
-    document.getElementById("toastTitle").textContent =
-        title;
+// =========================
+// MESSAGE
+// =========================
 
-    document.getElementById("toastMessage").textContent =
-        message;
+function showMessage(
+    text,
+    type
+) {
 
-    toast.classList.add("show");
+    message.textContent =
+        text;
 
-    setTimeout(() => {
-        toast.classList.remove("show");
-    }, 3500);
+
+    message.className =
+        type === "success"
+            ? "message-success"
+            : "message-error";
+
+
+    setTimeout(
+        () => {
+
+            message.textContent =
+                "";
+
+        },
+        3000
+    );
+
 }
 
-function renderAll() {
-    renderDomains();
-    renderActivities();
-    updateStats();
+
+// =========================
+// ESCAPE HTML
+// =========================
+
+function escapeHtml(value) {
+
+    const div =
+        document.createElement("div");
+
+    div.textContent =
+        value;
+
+    return div.innerHTML;
+
 }
 
-renderAll();
+
+// =========================
+// EVENTS
+// =========================
+
+addButton.addEventListener(
+    "click",
+    addLink
+);
+
+
+urlInput.addEventListener(
+    "keydown",
+    event => {
+
+        if (event.key === "Enter") {
+
+            addLink();
+
+        }
+
+    }
+);
+
+
+searchInput.addEventListener(
+    "input",
+    render
+);
+
+
+filterStatus.addEventListener(
+    "change",
+    render
+);
+
+
+// =========================
+// INITIAL LOAD
+// =========================
+
+render();
+
+updateLastUpdate();
+```
