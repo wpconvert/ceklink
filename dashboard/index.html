@@ -11,229 +11,302 @@
 
 <body>
 
-    <div class="container">
+<div class="container">
 
-        <header class="header">
+    <header class="header">
+
+        <div class="brand">
+            <div class="brand-icon">N</div>
+
             <div>
-                <div class="brand">
-                    <div class="brand-icon">N</div>
-                    <div>
-                        <h1>Nawala Monitor</h1>
-                        <p>Website Monitoring Status Link</p>
-                    </div>
-                </div>
+                <h1>Nawala Monitor</h1>
+                <p>Monitoring Status Link</p>
             </div>
+        </div>
+
+
+        <div class="header-right">
+
+            <button
+                class="theme-toggle"
+                id="themeToggle"
+                title="Ganti tema"
+            >
+                <span id="themeIcon">☀</span>
+                <span class="toggle-circle"></span>
+                <span>☾</span>
+            </button>
+
 
             <div class="system">
                 <span class="online-dot"></span>
-                <span>System Online</span>
+                System Online
             </div>
-        </header>
 
 
-        <main>
+            <div class="update-info">
+                <span>Update terakhir</span>
+                <strong id="lastUpdate">-</strong>
+            </div>
 
-            <section class="section dashboard-section">
+        </div>
 
-                <div class="section-title">
-                    <div>
+    </header>
+
+
+    <main>
+
+        <!-- DASHBOARD -->
+
+        <section class="dashboard">
+
+            <div class="section-heading">
+
+                <div>
+                    <div class="heading-title">
+                        <span class="heading-icon">▦</span>
                         <h2>Dashboard</h2>
-                        <p>Ringkasan status seluruh link yang sedang dipantau.</p>
                     </div>
 
-                    <div class="last-update">
-                        Update terakhir:
-                        <strong id="lastUpdate">-</strong>
-                    </div>
+                    <p>
+                        Ringkasan status seluruh link yang sedang dipantau.
+                    </p>
                 </div>
 
+            </div>
 
-                <div class="stats">
 
-                    <div class="stat-card">
-                        <div class="stat-top">
-                            <span>Total Link</span>
-                            <div class="stat-icon blue">↗</div>
-                        </div>
+            <div class="stats">
 
+                <div class="stat-card">
+
+                    <div class="stat-icon blue">
+                        🔗
+                    </div>
+
+                    <div class="stat-content">
+                        <span>Total Link</span>
                         <strong id="totalLinks">0</strong>
-
                         <small>Link dalam monitoring</small>
                     </div>
 
+                </div>
 
-                    <div class="stat-card">
-                        <div class="stat-top">
-                            <span>Normal</span>
-                            <div class="stat-icon green">✓</div>
-                        </div>
 
+                <div class="stat-card">
+
+                    <div class="stat-icon green">
+                        ✓
+                    </div>
+
+                    <div class="stat-content">
+                        <span>Normal</span>
                         <strong id="normalLinks">0</strong>
-
                         <small>Link dengan status normal</small>
                     </div>
 
+                </div>
 
-                    <div class="stat-card">
-                        <div class="stat-top">
-                            <span>Nawala</span>
-                            <div class="stat-icon red">!</div>
-                        </div>
 
+                <div class="stat-card">
+
+                    <div class="stat-icon red">
+                        !
+                    </div>
+
+                    <div class="stat-content">
+                        <span>Nawala</span>
                         <strong id="blockedLinks">0</strong>
-
                         <small>Link terdeteksi Nawala</small>
                     </div>
 
+                </div>
 
-                    <div class="stat-card">
-                        <div class="stat-top">
-                            <span>Belum Dicek</span>
-                            <div class="stat-icon yellow">◷</div>
-                        </div>
 
+                <div class="stat-card">
+
+                    <div class="stat-icon yellow">
+                        ◷
+                    </div>
+
+                    <div class="stat-content">
+                        <span>Belum Dicek</span>
                         <strong id="uncheckedLinks">0</strong>
-
                         <small>Menunggu pengecekan</small>
                     </div>
 
                 </div>
 
-            </section>
+            </div>
+
+        </section>
 
 
-            <section class="section">
+        <!-- TAMBAH LINK -->
 
-                <div class="section-title">
-                    <div>
+        <section class="panel">
+
+            <div class="section-heading">
+
+                <div>
+                    <div class="heading-title">
+                        <span class="heading-icon">🔗</span>
                         <h2>Tambah Link</h2>
-                        <p>Masukkan link yang ingin kamu pantau.</p>
                     </div>
+
+                    <p>
+                        Masukkan link yang ingin kamu pantau.
+                    </p>
+                </div>
+
+            </div>
+
+
+            <div class="add-box">
+
+                <div class="url-input">
+
+                    <span>🔗</span>
+
+                    <input
+                        type="text"
+                        id="urlInput"
+                        placeholder="Masukkan URL, contoh: https://example.com"
+                        autocomplete="off"
+                    >
+
                 </div>
 
 
-                <div class="add-box">
+                <button
+                    class="btn-primary"
+                    id="addButton"
+                >
+                    + Tambah Link
+                </button>
 
-                    <div class="url-input">
-                        <span>🔗</span>
+            </div>
+
+
+            <div id="message"></div>
+
+        </section>
+
+
+        <!-- MONITORING -->
+
+        <section class="panel monitoring-panel">
+
+            <div class="monitoring-heading">
+
+                <div>
+
+                    <div class="heading-title">
+                        <span class="heading-icon">◉</span>
+                        <h2>Monitoring Link</h2>
+                    </div>
+
+                    <p>
+                        Daftar seluruh link yang sedang dipantau.
+                    </p>
+
+                </div>
+
+
+                <div class="monitoring-actions">
+
+                    <div class="search">
+
+                        <span>⌕</span>
 
                         <input
                             type="text"
-                            id="urlInput"
-                            placeholder="Masukkan URL, contoh: https://example.com"
-                            autocomplete="off"
+                            id="searchInput"
+                            placeholder="Cari link..."
                         >
+
                     </div>
 
-                    <button
-                        class="btn-primary"
-                        id="addButton"
-                    >
-                        + Tambah Link
-                    </button>
+
+                    <select id="filterStatus">
+
+                        <option value="all">
+                            Semua Status
+                        </option>
+
+                        <option value="normal">
+                            Normal
+                        </option>
+
+                        <option value="nawala">
+                            Nawala
+                        </option>
+
+                        <option value="unchecked">
+                            Belum Dicek
+                        </option>
+
+                    </select>
 
                 </div>
 
-                <div id="message"></div>
-
-            </section>
+            </div>
 
 
-            <section class="section monitoring-section">
+            <div class="table-container">
 
-                <div class="section-title monitoring-title">
+                <table>
 
-                    <div>
-                        <h2>Monitoring Link</h2>
-                        <p>Daftar seluruh link yang sedang dipantau.</p>
+                    <thead>
+
+                        <tr>
+                            <th>LINK</th>
+                            <th>STATUS</th>
+                            <th>TERAKHIR DICEK</th>
+                            <th>AKSI</th>
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody id="linkTable"></tbody>
+
+                </table>
+
+
+                <div
+                    id="emptyState"
+                    class="empty-state"
+                >
+
+                    <div class="empty-icon">
+                        🔗
                     </div>
 
+                    <h3>Belum ada link</h3>
 
-                    <div class="monitoring-actions">
-
-                        <div class="search">
-                            <span>⌕</span>
-
-                            <input
-                                type="text"
-                                id="searchInput"
-                                placeholder="Cari link..."
-                            >
-                        </div>
-
-
-                        <select id="filterStatus">
-
-                            <option value="all">
-                                Semua Status
-                            </option>
-
-                            <option value="normal">
-                                Normal
-                            </option>
-
-                            <option value="nawala">
-                                Nawala
-                            </option>
-
-                            <option value="unchecked">
-                                Belum Dicek
-                            </option>
-
-                        </select>
-
-                    </div>
+                    <p>
+                        Tambahkan link di atas untuk mulai monitoring.
+                    </p>
 
                 </div>
 
+            </div>
 
-                <div class="table-container">
+        </section>
 
-                    <table>
-
-                        <thead>
-                            <tr>
-                                <th>LINK</th>
-                                <th>STATUS</th>
-                                <th>TERAKHIR DICEK</th>
-                                <th>AKSI</th>
-                            </tr>
-                        </thead>
-
-                        <tbody id="linkTable"></tbody>
-
-                    </table>
+    </main>
 
 
-                    <div
-                        id="emptyState"
-                        class="empty-state"
-                    >
-                        <div class="empty-icon">🔗</div>
+    <footer>
+        <span>© 2026 Nawala Monitor</span>
+        <span>Monitoring System</span>
+    </footer>
 
-                        <h3>Belum ada link</h3>
-
-                        <p>
-                            Tambahkan link di atas untuk mulai monitoring.
-                        </p>
-                    </div>
-
-                </div>
-
-            </section>
-
-        </main>
+</div>
 
 
-        <footer>
-            <span>Nawala Monitor</span>
-            <span>Monitoring System</span>
-        </footer>
-
-    </div>
-
-
-    <script src="script.js"></script>
+<script src="script.js"></script>
 
 </body>
 </html>
