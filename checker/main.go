@@ -14,12 +14,27 @@ import (
 )
 
 type CheckResponse struct {
-	Success bool   `json:"success"`
-	Domain  string `json:"domain"`
-	Status  string `json:"status"`
-	Blocked bool   `json:"blocked"`
-	Server  string `json:"server,omitempty"`
-	Message string `json:"message,omitempty"`
+	Success bool          `json:"success"`
+	Domain  string        `json:"domain,omitempty"`
+	Status  string        `json:"status"`
+	Blocked bool          `json:"blocked"`
+	Servers []ServerCheck `json:"servers,omitempty"`
+	Message string        `json:"message,omitempty"`
+}
+
+type ServerCheck struct {
+	Address   string   `json:"address"`
+	Keyword   string   `json:"keyword"`
+	Success   bool     `json:"success"`
+	Protocol  string   `json:"protocol,omitempty"`
+	RCode     string   `json:"rcode,omitempty"`
+	LatencyMS int64    `json:"latency_ms,omitempty"`
+	Blocked   bool     `json:"blocked"`
+	Detection string   `json:"detection,omitempty"`
+	Answers   []string `json:"answers,omitempty"`
+	Authority []string `json:"authority,omitempty"`
+	Extra     []string `json:"extra,omitempty"`
+	Error     string   `json:"error,omitempty"`
 }
 
 type HealthResponse struct {
@@ -36,20 +51,16 @@ type DNSServer struct {
 
 var dnsServers = []DNSServer{
 	{
-		Address: "103.155.26.28",
-		Keyword: "trustpositif",
-	},
-	{
-		Address: "103.155.26.29",
-		Keyword: "komdigi",
-	},
-	{
 		Address: "180.131.144.144",
 		Keyword: "internetpositif",
 	},
 	{
 		Address: "180.131.145.145",
 		Keyword: "internetpositif",
+	},
+	{
+		Address: "103.155.26.28",
+		Keyword: "trustpositif",
 	},
 }
 
@@ -64,100 +75,72 @@ func main() {
 
 	port := "8080"
 
-	log.Println(
-		"Nawala Checker Server berjalan di port",
-		port,
-	)
+	log.Println("Nawala Checker Server berjalan di port", port)
 
-	err := http.ListenAndServe(":"+port, nil)
-
-	if err != nil {
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func handleRoot(w http.ResponseWriter, r *http.Request) {
-	writeJSON(
-		w,
-		http.StatusOK,
-		map[string]interface{}{
-			"success": true,
-			"service": "Nawala Checker Server",
-			"endpoints": []string{
-				"/health",
-				"/check?domain=example.com",
-			},
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"service": "Nawala Checker Server",
+		"endpoints": []string{
+			"/health",
+			"/check?domain=example.com",
 		},
-	)
+	})
 }
 
 func handleHealth(w http.ResponseWriter, r *http.Request) {
-	response := HealthResponse{
+	writeJSON(w, http.StatusOK, HealthResponse{
 		Success: true,
 		Status:  "online",
 		Service: "Nawala Checker Server",
-		Time: time.Now().UTC().Format(time.RFC3339),
-	}
-
-	writeJSON(
-		w,
-		http.StatusOK,
-		response,
-	)
+		Time:    time.Now().UTC().Format(time.RFC3339),
+	})
 }
 
 func handleCheck(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		writeJSON(
-			w,
-			http.StatusMethodNotAllowed,
-			CheckResponse{
-				Success: false,
-				Status:  "error",
-				Message: "Method harus GET.",
-			},
-		)
-
+		writeJSON(w, http.StatusMethodNotAllowed, CheckResponse{
+			Success: false,
+			Status:  "error",
+			Message: "Method harus GET.",
+		})
 		return
 	}
 
-	rawDomain := r.URL.Query().Get("domain")
-
-	domain := normalizeDomain(rawDomain)
+	domain := normalizeDomain(r.URL.Query().Get("domain"))
 
 	if domain == "" {
-		writeJSON(
-			w,
-			http.StatusBadRequest,
-			CheckResponse{
-				Success: false,
-				Status:  "error",
-				Message: "Domain tidak valid.",
-			},
-		)
-
+		writeJSON(w, http.StatusBadRequest, CheckResponse{
+			Success: false,
+			Status:  "error",
+			Message: "Domain tidak valid.",
+		})
 		return
 	}
 
 	result := checkDomain(domain)
 
-	writeJSON(
-		w,
-		http.StatusOK,
-		result,
-	)
+	statusCode := http.StatusOK
+
+	if result.Status == "error" {
+		statusCode = http.StatusBadGateway
+	}
+
+	writeJSON(w, statusCode, result)
 }
 
 func normalizeDomain(input string) string {
-	value := strings.TrimSpace(
-		strings.ToLower(input),
-	)
+	value := strings.TrimSpace(strings.ToLower(input))
 
 	if value == "" {
 		return ""
 	}
 
-	// Kalau user memasukkan URL lengkap.
 	if strings.HasPrefix(value, "http://") ||
 		strings.HasPrefix(value, "https://") {
 
@@ -170,7 +153,6 @@ func normalizeDomain(input string) string {
 		value = parsed.Hostname()
 
 	} else {
-		// Hapus path/query/fragment.
 		value = strings.Split(value, "/")[0]
 		value = strings.Split(value, "?")[0]
 		value = strings.Split(value, "#")[0]
@@ -179,11 +161,7 @@ func normalizeDomain(input string) string {
 	value = strings.TrimSuffix(value, ".")
 	value = strings.TrimPrefix(value, "www.")
 
-	if value == "" {
-		return ""
-	}
-
-	if len(value) > 253 {
+	if value == "" || len(value) > 253 {
 		return ""
 	}
 
@@ -195,173 +173,180 @@ func normalizeDomain(input string) string {
 }
 
 func checkDomain(domain string) CheckResponse {
+	results := make([]ServerCheck, 0, len(dnsServers))
+	successfulQueries := 0
+	blocked := false
+
 	for _, server := range dnsServers {
-		blocked, err := queryDNS(domain, server)
+		result := inspectDNSServer(domain, server)
+		results = append(results, result)
 
-		if err != nil {
-			log.Printf(
-				"DNS %s gagal untuk %s: %v",
-				server.Address,
-				domain,
-				err,
-			)
-
-			continue
+		if result.Success {
+			successfulQueries++
 		}
 
-		if blocked {
-			return CheckResponse{
-				Success: true,
-				Domain:  domain,
-				Status:  "nawala",
-				Blocked: true,
-				Server:  server.Address,
-			}
+		if result.Blocked {
+			blocked = true
 		}
 	}
 
-	// Semua resolver berhasil di-query
-	// tetapi tidak menemukan indikator block.
+	if blocked {
+		return CheckResponse{
+			Success: true,
+			Domain:  domain,
+			Status:  "nawala",
+			Blocked: true,
+			Servers: results,
+		}
+	}
+
+	if successfulQueries == 0 {
+		return CheckResponse{
+			Success: false,
+			Domain:  domain,
+			Status:  "unknown",
+			Blocked: false,
+			Servers: results,
+			Message: "Tidak ada DNS resolver yang berhasil memberikan respons.",
+		}
+	}
+
 	return CheckResponse{
 		Success: true,
 		Domain:  domain,
 		Status:  "normal",
 		Blocked: false,
+		Servers: results,
 	}
 }
 
-func queryDNS(
-	domain string,
-	server DNSServer,
-) (bool, error) {
-
-	client := &dns.Client{
-		Timeout: 5 * time.Second,
+func inspectDNSServer(domain string, server DNSServer) ServerCheck {
+	result := ServerCheck{
+		Address: server.Address,
+		Keyword: server.Keyword,
+		Blocked: false,
 	}
 
-	message := new(dns.Msg)
+	protocols := []string{"udp", "tcp"}
+	var lastError error
 
-	message.SetQuestion(
-		dns.Fqdn(domain),
-		dns.TypeA,
-	)
+	for _, protocol := range protocols {
+		start := time.Now()
 
-	message.RecursionDesired = true
+		message := new(dns.Msg)
+		message.SetQuestion(dns.Fqdn(domain), dns.TypeA)
+		message.RecursionDesired = true
 
-	serverAddress := server.Address + ":53"
+		client := &dns.Client{
+			Net:     protocol,
+			Timeout: 5 * time.Second,
+		}
 
-	response, _, err := client.Exchange(
-		message,
-		serverAddress,
-	)
-
-	if err != nil {
-		return false, err
-	}
-
-	if response == nil {
-		return false, fmt.Errorf(
-			"DNS response kosong",
+		response, _, err := client.Exchange(
+			message,
+			server.Address+":53",
 		)
+
+		latency := time.Since(start).Milliseconds()
+
+		if err != nil {
+			lastError = err
+			continue
+		}
+
+		if response == nil {
+			lastError = fmt.Errorf("DNS response kosong")
+			continue
+		}
+
+		result.Success = true
+		result.Protocol = protocol
+		result.LatencyMS = latency
+		result.RCode = dns.RcodeToString[response.Rcode]
+		result.Answers = rrStrings(response.Answer)
+		result.Authority = rrStrings(response.Ns)
+		result.Extra = rrStrings(response.Extra)
+
+		blocked, detection := detectBlock(response, server.Keyword)
+
+		result.Blocked = blocked
+		result.Detection = detection
+
+		return result
 	}
 
-	/*
-		Periksa seluruh bagian DNS response.
+	if lastError != nil {
+		result.Error = lastError.Error()
+	} else {
+		result.Error = "DNS query gagal."
+	}
 
-		Ini penting karena indikator Komdigi
-		dapat muncul pada OPT / Extra section.
-	*/
+	return result
+}
 
-	records := []dns.RR{}
+func detectBlock(response *dns.Msg, keyword string) (bool, string) {
+	keyword = strings.ToLower(keyword)
 
-	records = append(
-		records,
-		response.Answer...,
+	records := make([]dns.RR, 0,
+		len(response.Answer)+len(response.Ns)+len(response.Extra),
 	)
 
-	records = append(
-		records,
-		response.Ns...,
-	)
-
-	records = append(
-		records,
-		response.Extra...,
-	)
-
-	keyword := strings.ToLower(server.Keyword)
+	records = append(records, response.Answer...)
+	records = append(records, response.Ns...)
+	records = append(records, response.Extra...)
 
 	for _, record := range records {
-		recordText := strings.ToLower(
-			record.String(),
-		)
+		text := strings.ToLower(record.String())
 
-		if strings.Contains(
-			recordText,
-			keyword,
-		) {
-			return true, nil
+		if keyword != "" && strings.Contains(text, keyword) {
+			return true, "keyword:" + keyword
+		}
+
+		if strings.Contains(text, "trustpositif.komdigi.go.id") {
+			return true, "trustpositif.komdigi.go.id"
+		}
+
+		if strings.Contains(text, "trustpositif.kominfo.go.id") {
+			return true, "trustpositif.kominfo.go.id"
+		}
+
+		if strings.Contains(text, "internetpositif.id") {
+			return true, "internetpositif.id"
+		}
+
+		if strings.Contains(text, "internetsehatku.com") {
+			return true, "internetsehatku.com"
 		}
 	}
 
-	/*
-		Deteksi khusus EDE 15.
-
-		Komdigi menggunakan EDE 15
-		(Blocked) pada response DNS.
-	*/
-
-	for _, record := range response.Extra {
-		recordText := strings.ToLower(
-			record.String(),
-		)
-
-		if strings.Contains(recordText, "ede: 15") &&
-			(strings.Contains(recordText, "trustpositif") ||
-				strings.Contains(recordText, "komdigi")) {
-
-			return true, nil
-		}
-	}
-
-	return false, nil
+	return false, ""
 }
 
-func writeJSON(
-	w http.ResponseWriter,
-	status int,
-	data interface{},
-) {
-	w.Header().Set(
-		"Content-Type",
-		"application/json; charset=utf-8",
-	)
+func rrStrings(records []dns.RR) []string {
+	if len(records) == 0 {
+		return []string{}
+	}
 
-	w.Header().Set(
-		"Access-Control-Allow-Origin",
-		"*",
-	)
+	result := make([]string, 0, len(records))
 
-	w.Header().Set(
-		"Access-Control-Allow-Methods",
-		"GET, OPTIONS",
-	)
+	for _, record := range records {
+		result = append(result, record.String())
+	}
 
-	w.Header().Set(
-		"Access-Control-Allow-Headers",
-		"Content-Type",
-	)
+	return result
+}
 
+func writeJSON(w http.ResponseWriter, status int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	w.WriteHeader(status)
 
 	encoder := json.NewEncoder(w)
-
 	encoder.SetEscapeHTML(false)
 
 	if err := encoder.Encode(data); err != nil {
-		log.Println(
-			"JSON encode error:",
-			err,
-		)
+		log.Println("JSON encode error:", err)
 	}
 }
