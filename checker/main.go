@@ -25,8 +25,8 @@ type CheckResponse struct {
 type HealthResponse struct {
 	Success bool   `json:"success"`
 	Status  string `json:"status"`
-	Service string   `json:"service"`
-	Time    string   `json:"time"`
+	Service string `json:"service"`
+	Time    string `json:"time"`
 }
 
 type DNSServer struct {
@@ -35,49 +35,32 @@ type DNSServer struct {
 }
 
 var dnsServers = []DNSServer{
-
 	{
 		Address: "103.155.26.28",
 		Keyword: "trustpositif",
 	},
-
 	{
 		Address: "103.155.26.29",
 		Keyword: "komdigi",
 	},
-
 	{
 		Address: "180.131.144.144",
 		Keyword: "internetpositif",
 	},
-
 	{
 		Address: "180.131.145.145",
 		Keyword: "internetpositif",
 	},
 }
 
-var domainRegex =
-	regexp.MustCompile(
-		`^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$`,
-	)
+var domainRegex = regexp.MustCompile(
+	`^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$`,
+)
 
 func main() {
-
-	http.HandleFunc(
-		"/",
-		handleRoot,
-	)
-
-	http.HandleFunc(
-		"/health",
-		handleHealth,
-	)
-
-	http.HandleFunc(
-		"/check",
-		handleCheck,
-	)
+	http.HandleFunc("/", handleRoot)
+	http.HandleFunc("/health", handleHealth)
+	http.HandleFunc("/check", handleCheck)
 
 	port := "8080"
 
@@ -86,61 +69,34 @@ func main() {
 		port,
 	)
 
-	err := http.ListenAndServe(
-		":" + port,
-		nil,
-	)
+	err := http.ListenAndServe(":"+port, nil)
 
 	if err != nil {
-
 		log.Fatal(err)
-
 	}
 }
 
-func handleRoot(
-	w http.ResponseWriter,
-	r *http.Request,
-) {
-
+func handleRoot(w http.ResponseWriter, r *http.Request) {
 	writeJSON(
 		w,
 		http.StatusOK,
 		map[string]interface{}{
-
 			"success": true,
-
-			"service":
-				"Nawala Checker Server",
-
+			"service": "Nawala Checker Server",
 			"endpoints": []string{
-
 				"/health",
-
 				"/check?domain=example.com",
 			},
 		},
 	)
 }
 
-func handleHealth(
-	w http.ResponseWriter,
-	r *http.Request,
-) {
-
+func handleHealth(w http.ResponseWriter, r *http.Request) {
 	response := HealthResponse{
-
 		Success: true,
-
-		Status: "online",
-
-		Service:
-			"Nawala Checker Server",
-
-		Time:
-			time.Now().UTC().Format(
-				time.RFC3339,
-			),
+		Status:  "online",
+		Service: "Nawala Checker Server",
+		Time: time.Now().UTC().Format(time.RFC3339),
 	}
 
 	writeJSON(
@@ -150,63 +106,40 @@ func handleHealth(
 	)
 }
 
-func handleCheck(
-	w http.ResponseWriter,
-	r *http.Request,
-) {
-
+func handleCheck(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-
 		writeJSON(
 			w,
 			http.StatusMethodNotAllowed,
 			CheckResponse{
-
 				Success: false,
-
-				Status: "error",
-
-				Message:
-					"Method harus GET.",
+				Status:  "error",
+				Message: "Method harus GET.",
 			},
 		)
 
 		return
 	}
 
-	rawDomain :=
-		r.URL.Query().Get(
-			"domain",
-		)
+	rawDomain := r.URL.Query().Get("domain")
 
-	domain :=
-		normalizeDomain(
-			rawDomain,
-		)
+	domain := normalizeDomain(rawDomain)
 
 	if domain == "" {
-
 		writeJSON(
 			w,
 			http.StatusBadRequest,
 			CheckResponse{
-
 				Success: false,
-
-				Status: "error",
-
-				Message:
-					"Domain tidak valid.",
+				Status:  "error",
+				Message: "Domain tidak valid.",
 			},
 		)
 
 		return
 	}
 
-	result :=
-		checkDomain(
-			domain,
-		)
+	result := checkDomain(domain)
 
 	writeJSON(
 		w,
@@ -215,76 +148,36 @@ func handleCheck(
 	)
 }
 
-func normalizeDomain(
-	input string,
-) string {
-
-	value :=
-		strings.TrimSpace(
-			strings.ToLower(
-				input,
-			),
-		)
+func normalizeDomain(input string) string {
+	value := strings.TrimSpace(
+		strings.ToLower(input),
+	)
 
 	if value == "" {
 		return ""
 	}
 
 	// Kalau user memasukkan URL lengkap.
-	if strings.HasPrefix(
-		value,
-		"http://",
-	) ||
-		strings.HasPrefix(
-			value,
-			"https://",
-		) {
+	if strings.HasPrefix(value, "http://") ||
+		strings.HasPrefix(value, "https://") {
 
-		parsed, err :=
-			url.Parse(
-				value,
-			)
+		parsed, err := url.Parse(value)
 
 		if err != nil {
 			return ""
 		}
 
-		value =
-			parsed.Hostname()
+		value = parsed.Hostname()
 
 	} else {
-
 		// Hapus path/query/fragment.
-		value =
-			strings.Split(
-				value,
-				"/",
-			)[0]
-
-		value =
-			strings.Split(
-				value,
-				"?",
-			)[0]
-
-		value =
-			strings.Split(
-				value,
-				"#",
-			)[0]
+		value = strings.Split(value, "/")[0]
+		value = strings.Split(value, "?")[0]
+		value = strings.Split(value, "#")[0]
 	}
 
-	value =
-		strings.TrimSuffix(
-			value,
-			".",
-		)
-
-	value =
-		strings.TrimPrefix(
-			value,
-			"www.",
-		)
+	value = strings.TrimSuffix(value, ".")
+	value = strings.TrimPrefix(value, "www.")
 
 	if value == "" {
 		return ""
@@ -294,31 +187,18 @@ func normalizeDomain(
 		return ""
 	}
 
-	if !domainRegex.MatchString(
-		value,
-	) {
-
+	if !domainRegex.MatchString(value) {
 		return ""
 	}
 
 	return value
 }
 
-func checkDomain(
-	domain string,
-) CheckResponse {
-
-	for _, server :=
-		range dnsServers {
-
-		blocked, err :=
-			queryDNS(
-				domain,
-				server,
-			)
+func checkDomain(domain string) CheckResponse {
+	for _, server := range dnsServers {
+		blocked, err := queryDNS(domain, server)
 
 		if err != nil {
-
 			log.Printf(
 				"DNS %s gagal untuk %s: %v",
 				server.Address,
@@ -330,34 +210,22 @@ func checkDomain(
 		}
 
 		if blocked {
-
 			return CheckResponse{
-
 				Success: true,
-
-				Domain: domain,
-
-				Status: "nawala",
-
+				Domain:  domain,
+				Status:  "nawala",
 				Blocked: true,
-
-				Server:
-					server.Address,
+				Server:  server.Address,
 			}
 		}
-
 	}
 
 	// Semua resolver berhasil di-query
 	// tetapi tidak menemukan indikator block.
 	return CheckResponse{
-
 		Success: true,
-
-		Domain: domain,
-
-		Status: "normal",
-
+		Domain:  domain,
+		Status:  "normal",
 		Blocked: false,
 	}
 }
@@ -368,14 +236,10 @@ func queryDNS(
 ) (bool, error) {
 
 	client := &dns.Client{
-
-		Timeout:
-			5 * time.Second,
+		Timeout: 5 * time.Second,
 	}
 
-	message := new(
-		dns.Msg,
-	)
+	message := new(dns.Msg)
 
 	message.SetQuestion(
 		dns.Fqdn(domain),
@@ -384,114 +248,80 @@ func queryDNS(
 
 	message.RecursionDesired = true
 
-	serverAddress :=
-		server.Address +
-			":53"
+	serverAddress := server.Address + ":53"
 
-	response, _, err :=
-		client.Exchange(
-			message,
-			serverAddress,
-		)
+	response, _, err := client.Exchange(
+		message,
+		serverAddress,
+	)
 
 	if err != nil {
-
 		return false, err
-
 	}
 
 	if response == nil {
-
-		return false,
-			fmt.Errorf(
-				"DNS response kosong",
-			)
+		return false, fmt.Errorf(
+			"DNS response kosong",
+		)
 	}
 
 	/*
 		Periksa seluruh bagian DNS response.
 
-	Ini penting karena indikator Komdigi
-	dapat muncul pada OPT / Extra section.
+		Ini penting karena indikator Komdigi
+		dapat muncul pada OPT / Extra section.
 	*/
 
-	records :=
-		[]dns.RR{}
+	records := []dns.RR{}
 
-	records =
-		append(
-			records,
-			response.Answer...,
+	records = append(
+		records,
+		response.Answer...,
+	)
+
+	records = append(
+		records,
+		response.Ns...,
+	)
+
+	records = append(
+		records,
+		response.Extra...,
+	)
+
+	keyword := strings.ToLower(server.Keyword)
+
+	for _, record := range records {
+		recordText := strings.ToLower(
+			record.String(),
 		)
-
-	records =
-		append(
-			records,
-			response.Ns...,
-		)
-
-	records =
-		append(
-			records,
-			response.Extra...,
-		)
-
-	keyword :=
-		strings.ToLower(
-			server.Keyword,
-		)
-
-	for _, record :=
-		range records {
-
-		recordText :=
-			strings.ToLower(
-				record.String(),
-			)
 
 		if strings.Contains(
 			recordText,
 			keyword,
 		) {
-
 			return true, nil
 		}
-
 	}
 
 	/*
 		Deteksi khusus EDE 15.
 
-	Komdigi menggunakan EDE 15
-	(Blocked) pada response DNS.
+		Komdigi menggunakan EDE 15
+		(Blocked) pada response DNS.
 	*/
 
-	for _, record :=
-		range response.Extra {
+	for _, record := range response.Extra {
+		recordText := strings.ToLower(
+			record.String(),
+		)
 
-		recordText :=
-			strings.ToLower(
-				record.String(),
-			)
-
-		if strings.Contains(
-			recordText,
-			"ede: 15",
-		) &&
-			(
-				strings.Contains(
-					recordText,
-					"trustpositif",
-				) ||
-					strings.Contains(
-						recordText,
-						"komdigi",
-					)
-			) {
+		if strings.Contains(recordText, "ede: 15") &&
+			(strings.Contains(recordText, "trustpositif") ||
+				strings.Contains(recordText, "komdigi")) {
 
 			return true, nil
 		}
-
 	}
 
 	return false, nil
@@ -502,7 +332,6 @@ func writeJSON(
 	status int,
 	data interface{},
 ) {
-
 	w.Header().Set(
 		"Content-Type",
 		"application/json; charset=utf-8",
@@ -525,16 +354,11 @@ func writeJSON(
 
 	w.WriteHeader(status)
 
-	encoder :=
-		json.NewEncoder(w)
+	encoder := json.NewEncoder(w)
 
-	encoder.SetEscapeHTML(
-		false,
-	)
+	encoder.SetEscapeHTML(false)
 
-	if err :=
-		encoder.Encode(data); err != nil {
-
+	if err := encoder.Encode(data); err != nil {
 		log.Println(
 			"JSON encode error:",
 			err,
