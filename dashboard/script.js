@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycby5VMq7qWdpX_FIfTRgtd2eCbdbiZGBU2F6dlEd4QGKaE9RR_BSWdv8sTEGi9Zwqr3-EA/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyNJpi_5Nz5huR-hzaG2wh1Pxc5LO2D0etDMAKgyaxUjIj_1sebsjdx0ivitP_mnF__mw/exec";
 
 let links = [];
 
