@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Nawala Monitor</title>
-
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -24,12 +22,12 @@
             </div>
         </div>
 
-
         <div class="header-right">
 
             <button
                 class="theme-toggle"
                 id="themeToggle"
+                type="button"
                 title="Ganti tema"
             >
                 <span id="themeIcon">☀</span>
@@ -37,12 +35,10 @@
                 <span>☾</span>
             </button>
 
-
             <div class="system">
                 <span class="online-dot"></span>
                 System Online
             </div>
-
 
             <div class="update-info">
                 <span>Update terakhir</span>
@@ -56,12 +52,9 @@
 
     <main>
 
-        <!-- DASHBOARD -->
-
         <section class="dashboard">
 
             <div class="section-heading">
-
                 <div>
                     <div class="heading-title">
                         <span class="heading-icon">▦</span>
@@ -72,77 +65,58 @@
                         Ringkasan status seluruh link yang sedang dipantau.
                     </p>
                 </div>
-
             </div>
 
 
             <div class="stats">
 
                 <div class="stat-card">
-
-                    <div class="stat-icon blue">
-                        🔗
-                    </div>
+                    <div class="stat-icon blue">🔗</div>
 
                     <div class="stat-content">
                         <span>Total Link</span>
                         <strong id="totalLinks">0</strong>
                         <small>Link dalam monitoring</small>
                     </div>
-
                 </div>
 
 
                 <div class="stat-card">
-
-                    <div class="stat-icon green">
-                        ✓
-                    </div>
+                    <div class="stat-icon green">✓</div>
 
                     <div class="stat-content">
                         <span>Normal</span>
                         <strong id="normalLinks">0</strong>
                         <small>Link dengan status normal</small>
                     </div>
-
                 </div>
 
 
                 <div class="stat-card">
-
-                    <div class="stat-icon red">
-                        !
-                    </div>
+                    <div class="stat-icon red">!</div>
 
                     <div class="stat-content">
                         <span>Nawala</span>
                         <strong id="blockedLinks">0</strong>
                         <small>Link terdeteksi Nawala</small>
                     </div>
-
                 </div>
 
 
                 <div class="stat-card">
-
-                    <div class="stat-icon yellow">
-                        ◷
-                    </div>
+                    <div class="stat-icon yellow">◷</div>
 
                     <div class="stat-content">
                         <span>Belum Dicek</span>
                         <strong id="uncheckedLinks">0</strong>
                         <small>Menunggu pengecekan</small>
                     </div>
-
                 </div>
 
             </div>
 
         </section>
 
-
-        <!-- TAMBAH LINK -->
 
         <section class="panel">
 
@@ -165,7 +139,6 @@
             <div class="add-box">
 
                 <div class="url-input">
-
                     <span>🔗</span>
 
                     <input
@@ -174,13 +147,12 @@
                         placeholder="Masukkan URL, contoh: https://example.com"
                         autocomplete="off"
                     >
-
                 </div>
-
 
                 <button
                     class="btn-primary"
                     id="addButton"
+                    type="button"
                 >
                     + Tambah Link
                 </button>
@@ -192,8 +164,6 @@
 
         </section>
 
-
-        <!-- MONITORING -->
 
         <section class="panel monitoring-panel">
 
@@ -214,6 +184,15 @@
 
 
                 <div class="monitoring-actions">
+
+                    <button
+                        class="btn-check-all"
+                        id="checkAllButton"
+                        type="button"
+                    >
+                        ↻ Cek Semua Link
+                    </button>
+
 
                     <div class="search">
 
@@ -258,16 +237,13 @@
                 <table>
 
                     <thead>
-
                         <tr>
                             <th>LINK</th>
                             <th>STATUS</th>
                             <th>TERAKHIR DICEK</th>
                             <th>AKSI</th>
                         </tr>
-
                     </thead>
-
 
                     <tbody id="linkTable"></tbody>
 
@@ -278,17 +254,13 @@
                     id="emptyState"
                     class="empty-state"
                 >
-
-                    <div class="empty-icon">
-                        🔗
-                    </div>
+                    <div class="empty-icon">🔗</div>
 
                     <h3>Belum ada link</h3>
 
                     <p>
                         Tambahkan link di atas untuk mulai monitoring.
                     </p>
-
                 </div>
 
             </div>
@@ -302,6 +274,93 @@
         <span>© 2026 Nawala Monitor</span>
         <span>Monitoring System</span>
     </footer>
+
+</div>
+
+
+<div
+    class="modal-overlay"
+    id="checkModal"
+    aria-hidden="true"
+>
+
+    <div
+        class="check-modal"
+        role="dialog"
+        aria-modal="true"
+    >
+
+        <button
+            class="modal-close"
+            id="modalClose"
+            type="button"
+            aria-label="Tutup"
+        >
+            ×
+        </button>
+
+
+        <div
+            class="modal-loader"
+            id="modalLoader"
+        >
+            <div class="spinner"></div>
+        </div>
+
+
+        <div
+            class="modal-success-icon"
+            id="modalSuccessIcon"
+        >
+            ✓
+        </div>
+
+
+        <h3 id="modalTitle">
+            Pengecekan Link
+        </h3>
+
+
+        <p id="modalText">
+            Memulai pengecekan...
+        </p>
+
+
+        <div
+            class="modal-progress"
+            id="modalProgress"
+        >
+            <span></span>
+        </div>
+
+
+        <div
+            class="modal-summary"
+            id="modalSummary"
+        >
+
+            <div>
+                <span>Normal</span>
+                <strong id="modalNormal">0</strong>
+            </div>
+
+            <div>
+                <span>Nawala</span>
+                <strong id="modalNawala">0</strong>
+            </div>
+
+        </div>
+
+
+        <button
+            class="modal-done"
+            id="modalDone"
+            type="button"
+        >
+            Tutup
+        </button>
+
+    </div>
 
 </div>
 
