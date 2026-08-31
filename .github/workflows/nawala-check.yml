@@ -1,0 +1,16 @@
+name: Nawala Check
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Test GAS connection
+        env:
+          GAS_URL: ${{ secrets.GAS_URL }}
+        run: |
+          echo "Testing GAS..."
+          curl -L --fail "${GAS_URL}?action=health"
