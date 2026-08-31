@@ -1,11 +1,8 @@
 const API_URL =
     "https://script.google.com/macros/s/AKfycbzcRn5ZFxlmN7pCGmfjuKqRMG24lLshWRKDblqPAAzvczFPoN6HbzIuIwy7vRLC1eLDyw/exec";
 
-const SYNC_COOLDOWN_MS =
-    90 * 1000;
-
-const SYNC_REFRESH_DELAY_MS =
-    65 * 1000;
+const SYNC_COOLDOWN_MS = 90000;
+const SYNC_REFRESH_DELAY_MS = 65000;
 
 let links = [];
 
@@ -58,12 +55,10 @@ function apiRequest(params) {
             const query =
                 new URLSearchParams({
                     ...params,
-                    callback:
-                        callbackName
+                    callback: callbackName
                 }).toString();
 
-            let finished =
-                false;
+            let finished = false;
 
             const timeout =
                 setTimeout(
@@ -78,6 +73,7 @@ function apiRequest(params) {
                     },
                     15000
                 );
+
 
             function cleanup() {
 
@@ -97,70 +93,48 @@ function apiRequest(params) {
 
             }
 
-            function finishSuccess(
-                data
-            ) {
 
-                if (
-                    finished
-                ) {
+            function finishSuccess(data) {
 
+                if (finished) {
                     return;
-
                 }
 
-                finished =
-                    true;
+                finished = true;
 
-                clearTimeout(
-                    timeout
-                );
+                clearTimeout(timeout);
 
                 cleanup();
 
-                resolve(
-                    data
-                );
+                resolve(data);
 
             }
 
-            function finishError(
-                error
-            ) {
 
-                if (
-                    finished
-                ) {
+            function finishError(error) {
 
+                if (finished) {
                     return;
-
                 }
 
-                finished =
-                    true;
+                finished = true;
 
-                clearTimeout(
-                    timeout
-                );
+                clearTimeout(timeout);
 
                 cleanup();
 
-                reject(
-                    error
-                );
+                reject(error);
 
             }
 
-            window[
-                callbackName
-            ] =
+
+            window[callbackName] =
                 function(data) {
 
-                    finishSuccess(
-                        data
-                    );
+                    finishSuccess(data);
 
                 };
+
 
             script.onerror =
                 function() {
@@ -173,10 +147,12 @@ function apiRequest(params) {
 
                 };
 
+
             script.src =
                 API_URL +
                 "?" +
                 query;
+
 
             document.body.appendChild(
                 script
@@ -188,28 +164,22 @@ function apiRequest(params) {
 }
 
 
-function normalizeUrl(
-    url
-) {
+function normalizeUrl(url) {
 
     url =
         String(
             url || ""
         ).trim();
 
+
     if (!url) {
-
         return "";
-
     }
 
+
     if (
-        !url.startsWith(
-            "http://"
-        ) &&
-        !url.startsWith(
-            "https://"
-        )
+        !url.startsWith("http://") &&
+        !url.startsWith("https://")
     ) {
 
         url =
@@ -218,25 +188,22 @@ function normalizeUrl(
 
     }
 
+
     return url;
 
 }
 
 
-function formatTime(
-    timestamp
-) {
+function formatTime(timestamp) {
 
     if (!timestamp) {
-
         return "-";
-
     }
 
+
     const date =
-        new Date(
-            timestamp
-        );
+        new Date(timestamp);
+
 
     if (
         Number.isNaN(
@@ -248,32 +215,22 @@ function formatTime(
 
     }
 
+
     return date.toLocaleString(
         "id-ID",
         {
-            day:
-                "2-digit",
-
-            month:
-                "short",
-
-            year:
-                "numeric",
-
-            hour:
-                "2-digit",
-
-            minute:
-                "2-digit"
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
         }
     );
 
 }
 
 
-function sleep(
-    milliseconds
-) {
+function sleep(milliseconds) {
 
     return new Promise(
         function(resolve) {
@@ -297,9 +254,9 @@ async function loadLinks(
 
         const result =
             await apiRequest({
-                action:
-                    "list"
+                action: "list"
             });
+
 
         if (
             !result ||
@@ -315,6 +272,7 @@ async function loadLinks(
 
         }
 
+
         links =
             Array.isArray(
                 result.data
@@ -322,11 +280,14 @@ async function loadLinks(
                 ? result.data
                 : [];
 
+
         render();
 
         updateLastUpdate();
 
+
         return true;
+
 
     } catch (error) {
 
@@ -334,6 +295,7 @@ async function loadLinks(
             "LOAD LINKS ERROR:",
             error
         );
+
 
         if (!silent) {
 
@@ -343,6 +305,7 @@ async function loadLinks(
             );
 
         }
+
 
         return false;
 
@@ -358,6 +321,7 @@ async function addLink() {
             urlInput.value
         );
 
+
     if (!url) {
 
         showMessage(
@@ -368,6 +332,7 @@ async function addLink() {
         return;
 
     }
+
 
     try {
 
@@ -384,18 +349,22 @@ async function addLink() {
 
     }
 
+
     addButton.disabled =
         true;
+
 
     try {
 
         const result =
             await apiRequest({
-                action:
-                    "add",
-                url:
-                    url
+
+                action: "add",
+
+                url: url
+
             });
+
 
         if (
             !result ||
@@ -414,17 +383,28 @@ async function addLink() {
 
         }
 
+
         urlInput.value =
             "";
+
 
         showMessage(
             "Link berhasil ditambahkan.",
             "success"
         );
 
+
         await loadLinks();
 
-        triggerSyncInBackground();
+
+        /*
+         * Link baru langsung meminta
+         * checker dijalankan di background.
+         */
+        triggerSyncInBackground(
+            true
+        );
+
 
     } catch (error) {
 
@@ -433,10 +413,12 @@ async function addLink() {
             error
         );
 
+
         showMessage(
             "Gagal menambahkan link.",
             "error"
         );
+
 
     } finally {
 
@@ -462,11 +444,11 @@ async function checkUrl(id) {
             }
         );
 
+
     if (!link) {
-
         return;
-
     }
+
 
     const button =
         document.querySelector(
@@ -474,6 +456,7 @@ async function checkUrl(id) {
             String(id) +
             '"]'
         );
+
 
     if (button) {
 
@@ -484,43 +467,70 @@ async function checkUrl(id) {
             button.textContent;
 
         button.textContent =
-            "⏳ Cek...";
+            "⏳ Mengecek...";
 
     }
 
+
     try {
 
-        /*
-         * Endpoint check sekarang membaca
-         * status terakhir dari Google Sheets.
-         */
-        const result =
-            await apiRequest({
-                action:
-                    "check",
-                url:
-                    link.url
-            });
+        showMessage(
+            "Pengecekan semua link sedang dimulai...",
+            "success"
+        );
+
+
+        const syncResult =
+            await triggerSync();
+
 
         if (
-            !result ||
-            !result.success
+            !syncResult ||
+            !syncResult.success
         ) {
 
-            showMessage(
-                result &&
-                result.message
-                    ? result.message
-                    : "Status belum dapat diperiksa.",
-                "error"
+            throw new Error(
+                syncResult &&
+                syncResult.message
+                    ? syncResult.message
+                    : "Gagal memulai checker."
             );
-
-            return;
 
         }
 
-        const index =
-            links.findIndex(
+
+        showMessage(
+            "Checker sedang berjalan. Tunggu sekitar 1 menit...",
+            "success"
+        );
+
+
+        /*
+         * Tunggu GitHub Actions menyelesaikan
+         * pemeriksaan lalu ambil data Sheets terbaru.
+         */
+        await sleep(
+            SYNC_REFRESH_DELAY_MS
+        );
+
+
+        const success =
+            await loadLinks(
+                true
+            );
+
+
+        if (!success) {
+
+            throw new Error(
+                "Status terbaru gagal diambil."
+            );
+
+        }
+
+
+        const updatedLink =
+            links.find(
                 function(item) {
 
                     return String(
@@ -531,26 +541,49 @@ async function checkUrl(id) {
                 }
             );
 
+
         if (
-            index !== -1
+            updatedLink
         ) {
 
-            links[index].status =
-                result.status;
+            if (
+                updatedLink.status ===
+                "nawala"
+            ) {
 
-            links[index].lastChecked =
-                result.lastChecked ||
-                links[index].lastChecked ||
-                null;
+                showMessage(
+                    "Domain terdeteksi NAWALA.",
+                    "error"
+                );
+
+            } else if (
+                updatedLink.status ===
+                "normal"
+            ) {
+
+                showMessage(
+                    "Domain NORMAL.",
+                    "success"
+                );
+
+            } else {
+
+                showMessage(
+                    "Status belum dapat dipastikan.",
+                    "error"
+                );
+
+            }
+
+        } else {
+
+            showMessage(
+                "Status terbaru sudah diperbarui.",
+                "success"
+            );
 
         }
 
-        render();
-
-        showMessage(
-            "Status terakhir berhasil diambil.",
-            "success"
-        );
 
     } catch (error) {
 
@@ -559,10 +592,13 @@ async function checkUrl(id) {
             error
         );
 
+
         showMessage(
-            "Gagal mengambil status.",
+            error.message ||
+            "Gagal menjalankan pengecekan.",
             "error"
         );
+
 
     } finally {
 
@@ -584,84 +620,18 @@ async function checkUrl(id) {
 }
 
 
-async function deleteLink(
-    id
-) {
-
-    if (
-        !confirm(
-            "Hapus link ini dari monitoring?"
-        )
-    ) {
-
-        return;
-
-    }
-
-    try {
-
-        const result =
-            await apiRequest({
-                action:
-                    "delete",
-                id:
-                    id
-            });
-
-        if (
-            !result ||
-            !result.success
-        ) {
-
-            showMessage(
-                result &&
-                result.message
-                    ? result.message
-                    : "Gagal menghapus link.",
-                "error"
-            );
-
-            return;
-
-        }
-
-        showMessage(
-            "Link berhasil dihapus.",
-            "success"
-        );
-
-        await loadLinks();
-
-        triggerSyncInBackground();
-
-    } catch (error) {
-
-        console.error(
-            "DELETE LINK ERROR:",
-            error
-        );
-
-        showMessage(
-            "Gagal menghapus link.",
-            "error"
-        );
-
-    }
-
-}
-
-
 async function triggerSync() {
 
     try {
 
         const result =
             await apiRequest({
-                action:
-                    "sync"
+                action: "sync"
             });
 
+
         return result;
+
 
     } catch (error) {
 
@@ -670,15 +640,16 @@ async function triggerSync() {
             error
         );
 
-        return {
-            success:
-                false,
 
-            status:
-                "error",
+        return {
+
+            success: false,
+
+            status: "error",
 
             message:
                 error.message
+
         };
 
     }
@@ -693,16 +664,15 @@ function getLastSyncTrigger() {
             "nawalaLastSyncTrigger"
         );
 
+
     if (!value) {
-
         return 0;
-
     }
 
+
     const timestamp =
-        Number(
-            value
-        );
+        Number(value);
+
 
     if (
         !Number.isFinite(
@@ -713,6 +683,7 @@ function getLastSyncTrigger() {
         return 0;
 
     }
+
 
     return timestamp;
 
@@ -736,6 +707,7 @@ function shouldTriggerSync() {
     const lastSync =
         getLastSyncTrigger();
 
+
     return (
         Date.now() -
         lastSync >=
@@ -758,10 +730,13 @@ async function triggerSyncInBackground(
 
     }
 
+
     setLastSyncTrigger();
+
 
     const result =
         await triggerSync();
+
 
     if (
         !result ||
@@ -777,19 +752,17 @@ async function triggerSyncInBackground(
 
     }
 
-    showMessage(
-        "Pengecekan terbaru sedang dijalankan...",
-        "success"
-    );
 
+    /*
+     * Tidak menahan tampilan website.
+     * Setelah checker selesai, ambil hasil terbaru.
+     */
     setTimeout(
         async function() {
 
             await loadLinks(
                 true
             );
-
-            render();
 
         },
         SYNC_REFRESH_DELAY_MS
@@ -798,13 +771,10 @@ async function triggerSyncInBackground(
 }
 
 
-function getStatusHTML(
-    status
-) {
+function getStatusHTML(status) {
 
     if (
-        status ===
-        "normal"
+        status === "normal"
     ) {
 
         return `
@@ -816,9 +786,9 @@ function getStatusHTML(
 
     }
 
+
     if (
-        status ===
-        "nawala"
+        status === "nawala"
     ) {
 
         return `
@@ -830,9 +800,9 @@ function getStatusHTML(
 
     }
 
+
     if (
-        status ===
-        "checking"
+        status === "checking"
     ) {
 
         return `
@@ -844,9 +814,9 @@ function getStatusHTML(
 
     }
 
+
     if (
-        status ===
-        "unknown"
+        status === "unknown"
     ) {
 
         return `
@@ -858,9 +828,9 @@ function getStatusHTML(
 
     }
 
+
     if (
-        status ===
-        "error"
+        status === "error"
     ) {
 
         return `
@@ -871,6 +841,7 @@ function getStatusHTML(
         `;
 
     }
+
 
     return `
         <span class="status status-unchecked">
@@ -889,8 +860,10 @@ function render() {
             .toLowerCase()
             .trim();
 
+
     const filter =
         filterStatus.value;
+
 
     let filtered =
         links.filter(
@@ -907,9 +880,9 @@ function render() {
             }
         );
 
+
     if (
-        filter !==
-        "all"
+        filter !== "all"
     ) {
 
         filtered =
@@ -926,13 +899,16 @@ function render() {
 
     }
 
+
     linkTable.innerHTML =
         "";
+
 
     emptyState.style.display =
         filtered.length === 0
             ? "block"
             : "none";
+
 
     filtered.forEach(
         function(item) {
@@ -941,6 +917,7 @@ function render() {
                 document.createElement(
                     "tr"
                 );
+
 
             row.innerHTML = `
 
@@ -995,12 +972,14 @@ function render() {
 
             `;
 
+
             linkTable.appendChild(
                 row
             );
 
         }
     );
+
 
     updateStatistics();
 
@@ -1011,6 +990,7 @@ function updateStatistics() {
 
     const total =
         links.length;
+
 
     const normal =
         links.filter(
@@ -1024,6 +1004,7 @@ function updateStatistics() {
             }
         ).length;
 
+
     const nawala =
         links.filter(
             function(item) {
@@ -1035,6 +1016,7 @@ function updateStatistics() {
 
             }
         ).length;
+
 
     const unchecked =
         links.filter(
@@ -1050,25 +1032,30 @@ function updateStatistics() {
             }
         ).length;
 
+
     const totalElement =
         document.getElementById(
             "totalLinks"
         );
+
 
     const normalElement =
         document.getElementById(
             "normalLinks"
         );
 
+
     const blockedElement =
         document.getElementById(
             "blockedLinks"
         );
 
+
     const uncheckedElement =
         document.getElementById(
             "uncheckedLinks"
         );
+
 
     if (totalElement) {
 
@@ -1077,6 +1064,7 @@ function updateStatistics() {
 
     }
 
+
     if (normalElement) {
 
         normalElement.textContent =
@@ -1084,12 +1072,14 @@ function updateStatistics() {
 
     }
 
+
     if (blockedElement) {
 
         blockedElement.textContent =
             nawala;
 
     }
+
 
     if (uncheckedElement) {
 
@@ -1108,11 +1098,11 @@ function updateLastUpdate() {
             "lastUpdate"
         );
 
+
     if (!element) {
-
         return;
-
     }
+
 
     element.textContent =
         new Date().toLocaleTimeString(
@@ -1138,19 +1128,19 @@ function showMessage(
 ) {
 
     if (!message) {
-
         return;
-
     }
+
 
     message.textContent =
         text;
 
+
     message.className =
-        type ===
-        "success"
+        type === "success"
             ? "message-success"
             : "message-error";
+
 
     setTimeout(
         function() {
@@ -1177,10 +1167,12 @@ function escapeHtml(
             "div"
         );
 
+
     div.textContent =
         String(
             value || ""
         );
+
 
     return div.innerHTML;
 
@@ -1225,6 +1217,7 @@ function loadTheme() {
             "nawalaTheme"
         );
 
+
     if (
         savedTheme ===
         "dark"
@@ -1257,10 +1250,12 @@ function toggleTheme() {
         "dark"
     );
 
+
     const dark =
         document.body.classList.contains(
             "dark"
         );
+
 
     localStorage.setItem(
         "nawalaTheme",
@@ -1268,6 +1263,7 @@ function toggleTheme() {
             ? "dark"
             : "light"
     );
+
 
     themeIcon.textContent =
         "☀";
@@ -1326,8 +1322,8 @@ loadTheme();
     await loadLinks();
 
     /*
-     * Memicu GitHub Actions di background.
-     * Website tidak menunggu checker selesai.
+     * Saat halaman dibuka/refresh,
+     * checker dijalankan di background.
      */
     triggerSyncInBackground();
 
