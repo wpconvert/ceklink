@@ -1,5 +1,11 @@
 const API_URL =
-    "https://script.google.com/macros/s/AKfycbwuoM9qglC30KUtqTozVwI3CRVN74HeAWn0VJbJ10YEzd9Wny7wH0XuD4NkwLnDQcitbQ/exec";
+    "https://script.google.com/macros/s/AKfycbzcRn5ZFxlmN7pCGmfjuKqRMG24lLshWRKDblqPAAzvczFPoN6HbzIuIwy7vRLC1eLDyw/exec";
+
+const SYNC_COOLDOWN_MS =
+    90 * 1000;
+
+const SYNC_REFRESH_DELAY_MS =
+    65 * 1000;
 
 let links = [];
 
@@ -44,12 +50,10 @@ function apiRequest(params) {
                     Math.random() * 100000
                 );
 
-
             const script =
                 document.createElement(
                     "script"
                 );
-
 
             const query =
                 new URLSearchParams({
@@ -58,63 +62,8 @@ function apiRequest(params) {
                         callbackName
                 }).toString();
 
-
-            let finished = false;
-
-
-            function cleanup() {
-
-                delete window[
-                    callbackName
-                ];
-
-
-                if (
-                    script.parentNode
-                ) {
-
-                    script.parentNode.removeChild(
-                        script
-                    );
-
-                }
-
-            }
-
-
-            function finishSuccess(
-                data
-            ) {
-
-                if (finished) {
-                    return;
-                }
-
-                finished = true;
-
-                cleanup();
-
-                resolve(data);
-
-            }
-
-
-            function finishError(
-                error
-            ) {
-
-                if (finished) {
-                    return;
-                }
-
-                finished = true;
-
-                cleanup();
-
-                reject(error);
-
-            }
-
+            let finished =
+                false;
 
             const timeout =
                 setTimeout(
@@ -130,13 +79,82 @@ function apiRequest(params) {
                     15000
                 );
 
+            function cleanup() {
 
-            window[callbackName] =
-                function(data) {
+                delete window[
+                    callbackName
+                ];
 
-                    clearTimeout(
-                        timeout
+                if (
+                    script.parentNode
+                ) {
+
+                    script.parentNode.removeChild(
+                        script
                     );
+
+                }
+
+            }
+
+            function finishSuccess(
+                data
+            ) {
+
+                if (
+                    finished
+                ) {
+
+                    return;
+
+                }
+
+                finished =
+                    true;
+
+                clearTimeout(
+                    timeout
+                );
+
+                cleanup();
+
+                resolve(
+                    data
+                );
+
+            }
+
+            function finishError(
+                error
+            ) {
+
+                if (
+                    finished
+                ) {
+
+                    return;
+
+                }
+
+                finished =
+                    true;
+
+                clearTimeout(
+                    timeout
+                );
+
+                cleanup();
+
+                reject(
+                    error
+                );
+
+            }
+
+            window[
+                callbackName
+            ] =
+                function(data) {
 
                     finishSuccess(
                         data
@@ -144,13 +162,8 @@ function apiRequest(params) {
 
                 };
 
-
             script.onerror =
                 function() {
-
-                    clearTimeout(
-                        timeout
-                    );
 
                     finishError(
                         new Error(
@@ -160,12 +173,10 @@ function apiRequest(params) {
 
                 };
 
-
             script.src =
                 API_URL +
                 "?" +
                 query;
-
 
             document.body.appendChild(
                 script
@@ -177,18 +188,20 @@ function apiRequest(params) {
 }
 
 
-function normalizeUrl(url) {
+function normalizeUrl(
+    url
+) {
 
     url =
         String(
             url || ""
         ).trim();
 
-
     if (!url) {
-        return "";
-    }
 
+        return "";
+
+    }
 
     if (
         !url.startsWith(
@@ -205,7 +218,6 @@ function normalizeUrl(url) {
 
     }
 
-
     return url;
 
 }
@@ -216,13 +228,15 @@ function formatTime(
 ) {
 
     if (!timestamp) {
+
         return "-";
+
     }
 
-
     const date =
-        new Date(timestamp);
-
+        new Date(
+            timestamp
+        );
 
     if (
         Number.isNaN(
@@ -233,7 +247,6 @@ function formatTime(
         return "-";
 
     }
-
 
     return date.toLocaleString(
         "id-ID",
@@ -258,7 +271,7 @@ function formatTime(
 }
 
 
-function asyncDelay(
+function sleep(
     milliseconds
 ) {
 
@@ -276,7 +289,9 @@ function asyncDelay(
 }
 
 
-async function loadLinks() {
+async function loadLinks(
+    silent = false
+) {
 
     try {
 
@@ -285,7 +300,6 @@ async function loadLinks() {
                 action:
                     "list"
             });
-
 
         if (
             !result ||
@@ -301,7 +315,6 @@ async function loadLinks() {
 
         }
 
-
         links =
             Array.isArray(
                 result.data
@@ -309,11 +322,11 @@ async function loadLinks() {
                 ? result.data
                 : [];
 
-
         render();
 
         updateLastUpdate();
 
+        return true;
 
     } catch (error) {
 
@@ -322,11 +335,16 @@ async function loadLinks() {
             error
         );
 
+        if (!silent) {
 
-        showMessage(
-            "Gagal mengambil data dari server.",
-            "error"
-        );
+            showMessage(
+                "Gagal mengambil data dari server.",
+                "error"
+            );
+
+        }
+
+        return false;
 
     }
 
@@ -340,7 +358,6 @@ async function addLink() {
             urlInput.value
         );
 
-
     if (!url) {
 
         showMessage(
@@ -352,11 +369,9 @@ async function addLink() {
 
     }
 
-
     try {
 
         new URL(url);
-
 
     } catch (error) {
 
@@ -369,24 +384,18 @@ async function addLink() {
 
     }
 
-
     addButton.disabled =
         true;
-
 
     try {
 
         const result =
             await apiRequest({
-
                 action:
                     "add",
-
                 url:
                     url
-
             });
-
 
         if (
             !result ||
@@ -405,19 +414,17 @@ async function addLink() {
 
         }
 
-
         urlInput.value =
             "";
-
 
         showMessage(
             "Link berhasil ditambahkan.",
             "success"
         );
 
-
         await loadLinks();
 
+        triggerSyncInBackground();
 
     } catch (error) {
 
@@ -426,12 +433,10 @@ async function addLink() {
             error
         );
 
-
         showMessage(
             "Gagal menambahkan link.",
             "error"
         );
-
 
     } finally {
 
@@ -457,11 +462,11 @@ async function checkUrl(id) {
             }
         );
 
-
     if (!link) {
-        return;
-    }
 
+        return;
+
+    }
 
     const button =
         document.querySelector(
@@ -469,7 +474,6 @@ async function checkUrl(id) {
             String(id) +
             '"]'
         );
-
 
     if (button) {
 
@@ -480,24 +484,23 @@ async function checkUrl(id) {
             button.textContent;
 
         button.textContent =
-            "⏳ Mengecek...";
+            "⏳ Cek...";
 
     }
 
-
     try {
 
+        /*
+         * Endpoint check sekarang membaca
+         * status terakhir dari Google Sheets.
+         */
         const result =
             await apiRequest({
-
                 action:
                     "check",
-
                 url:
                     link.url
-
             });
-
 
         if (
             !result ||
@@ -516,7 +519,6 @@ async function checkUrl(id) {
 
         }
 
-
         const index =
             links.findIndex(
                 function(item) {
@@ -529,7 +531,6 @@ async function checkUrl(id) {
                 }
             );
 
-
         if (
             index !== -1
         ) {
@@ -539,19 +540,17 @@ async function checkUrl(id) {
 
             links[index].lastChecked =
                 result.lastChecked ||
-                link.lastChecked ||
+                links[index].lastChecked ||
                 null;
 
         }
 
-
         render();
 
         showMessage(
-            "Status terbaru berhasil diambil.",
+            "Status terakhir berhasil diambil.",
             "success"
         );
-
 
     } catch (error) {
 
@@ -560,12 +559,10 @@ async function checkUrl(id) {
             error
         );
 
-
         showMessage(
-            "Gagal mengecek status.",
+            "Gagal mengambil status.",
             "error"
         );
-
 
     } finally {
 
@@ -587,7 +584,9 @@ async function checkUrl(id) {
 }
 
 
-async function deleteLink(id) {
+async function deleteLink(
+    id
+) {
 
     if (
         !confirm(
@@ -599,20 +598,15 @@ async function deleteLink(id) {
 
     }
 
-
     try {
 
         const result =
             await apiRequest({
-
                 action:
                     "delete",
-
                 id:
                     id
-
             });
-
 
         if (
             !result ||
@@ -631,15 +625,14 @@ async function deleteLink(id) {
 
         }
 
-
         showMessage(
             "Link berhasil dihapus.",
             "success"
         );
 
-
         await loadLinks();
 
+        triggerSyncInBackground();
 
     } catch (error) {
 
@@ -647,7 +640,6 @@ async function deleteLink(id) {
             "DELETE LINK ERROR:",
             error
         );
-
 
         showMessage(
             "Gagal menghapus link.",
@@ -659,12 +651,160 @@ async function deleteLink(id) {
 }
 
 
+async function triggerSync() {
+
+    try {
+
+        const result =
+            await apiRequest({
+                action:
+                    "sync"
+            });
+
+        return result;
+
+    } catch (error) {
+
+        console.error(
+            "SYNC ERROR:",
+            error
+        );
+
+        return {
+            success:
+                false,
+
+            status:
+                "error",
+
+            message:
+                error.message
+        };
+
+    }
+
+}
+
+
+function getLastSyncTrigger() {
+
+    const value =
+        localStorage.getItem(
+            "nawalaLastSyncTrigger"
+        );
+
+    if (!value) {
+
+        return 0;
+
+    }
+
+    const timestamp =
+        Number(
+            value
+        );
+
+    if (
+        !Number.isFinite(
+            timestamp
+        )
+    ) {
+
+        return 0;
+
+    }
+
+    return timestamp;
+
+}
+
+
+function setLastSyncTrigger() {
+
+    localStorage.setItem(
+        "nawalaLastSyncTrigger",
+        String(
+            Date.now()
+        )
+    );
+
+}
+
+
+function shouldTriggerSync() {
+
+    const lastSync =
+        getLastSyncTrigger();
+
+    return (
+        Date.now() -
+        lastSync >=
+        SYNC_COOLDOWN_MS
+    );
+
+}
+
+
+async function triggerSyncInBackground(
+    force = false
+) {
+
+    if (
+        !force &&
+        !shouldTriggerSync()
+    ) {
+
+        return;
+
+    }
+
+    setLastSyncTrigger();
+
+    const result =
+        await triggerSync();
+
+    if (
+        !result ||
+        !result.success
+    ) {
+
+        console.warn(
+            "SYNC NOT QUEUED:",
+            result
+        );
+
+        return;
+
+    }
+
+    showMessage(
+        "Pengecekan terbaru sedang dijalankan...",
+        "success"
+    );
+
+    setTimeout(
+        async function() {
+
+            await loadLinks(
+                true
+            );
+
+            render();
+
+        },
+        SYNC_REFRESH_DELAY_MS
+    );
+
+}
+
+
 function getStatusHTML(
     status
 ) {
 
     if (
-        status === "normal"
+        status ===
+        "normal"
     ) {
 
         return `
@@ -676,9 +816,9 @@ function getStatusHTML(
 
     }
 
-
     if (
-        status === "nawala"
+        status ===
+        "nawala"
     ) {
 
         return `
@@ -690,9 +830,9 @@ function getStatusHTML(
 
     }
 
-
     if (
-        status === "checking"
+        status ===
+        "checking"
     ) {
 
         return `
@@ -704,9 +844,9 @@ function getStatusHTML(
 
     }
 
-
     if (
-        status === "unknown"
+        status ===
+        "unknown"
     ) {
 
         return `
@@ -718,9 +858,9 @@ function getStatusHTML(
 
     }
 
-
     if (
-        status === "error"
+        status ===
+        "error"
     ) {
 
         return `
@@ -731,7 +871,6 @@ function getStatusHTML(
         `;
 
     }
-
 
     return `
         <span class="status status-unchecked">
@@ -750,10 +889,8 @@ function render() {
             .toLowerCase()
             .trim();
 
-
     const filter =
         filterStatus.value;
-
 
     let filtered =
         links.filter(
@@ -770,9 +907,9 @@ function render() {
             }
         );
 
-
     if (
-        filter !== "all"
+        filter !==
+        "all"
     ) {
 
         filtered =
@@ -789,16 +926,13 @@ function render() {
 
     }
 
-
     linkTable.innerHTML =
         "";
-
 
     emptyState.style.display =
         filtered.length === 0
             ? "block"
             : "none";
-
 
     filtered.forEach(
         function(item) {
@@ -807,7 +941,6 @@ function render() {
                 document.createElement(
                     "tr"
                 );
-
 
             row.innerHTML = `
 
@@ -862,14 +995,12 @@ function render() {
 
             `;
 
-
             linkTable.appendChild(
                 row
             );
 
         }
     );
-
 
     updateStatistics();
 
@@ -880,7 +1011,6 @@ function updateStatistics() {
 
     const total =
         links.length;
-
 
     const normal =
         links.filter(
@@ -894,7 +1024,6 @@ function updateStatistics() {
             }
         ).length;
 
-
     const nawala =
         links.filter(
             function(item) {
@@ -907,21 +1036,19 @@ function updateStatistics() {
             }
         ).length;
 
-
     const unchecked =
         links.filter(
             function(item) {
 
                 return (
                     item.status ===
-                        "unchecked" ||
+                    "unchecked" ||
                     item.status ===
-                        "unknown"
+                    "unknown"
                 );
 
             }
         ).length;
-
 
     const totalElement =
         document.getElementById(
@@ -943,14 +1070,12 @@ function updateStatistics() {
             "uncheckedLinks"
         );
 
-
     if (totalElement) {
 
         totalElement.textContent =
             total;
 
     }
-
 
     if (normalElement) {
 
@@ -959,14 +1084,12 @@ function updateStatistics() {
 
     }
 
-
     if (blockedElement) {
 
         blockedElement.textContent =
             nawala;
 
     }
-
 
     if (uncheckedElement) {
 
@@ -985,11 +1108,11 @@ function updateLastUpdate() {
             "lastUpdate"
         );
 
-
     if (!element) {
-        return;
-    }
 
+        return;
+
+    }
 
     element.textContent =
         new Date().toLocaleTimeString(
@@ -1014,15 +1137,20 @@ function showMessage(
     type
 ) {
 
+    if (!message) {
+
+        return;
+
+    }
+
     message.textContent =
         text;
 
-
     message.className =
-        type === "success"
+        type ===
+        "success"
             ? "message-success"
             : "message-error";
-
 
     setTimeout(
         function() {
@@ -1049,12 +1177,10 @@ function escapeHtml(
             "div"
         );
 
-
     div.textContent =
         String(
             value || ""
         );
-
 
     return div.innerHTML;
 
@@ -1099,9 +1225,9 @@ function loadTheme() {
             "nawalaTheme"
         );
 
-
     if (
-        savedTheme === "dark"
+        savedTheme ===
+        "dark"
     ) {
 
         document.body.classList.add(
@@ -1131,12 +1257,10 @@ function toggleTheme() {
         "dark"
     );
 
-
     const dark =
         document.body.classList.contains(
             "dark"
         );
-
 
     localStorage.setItem(
         "nawalaTheme",
@@ -1145,18 +1269,8 @@ function toggleTheme() {
             : "light"
     );
 
-
     themeIcon.textContent =
-        dark
-            ? "☀"
-            : "☀";
-
-}
-
-
-async function refreshData() {
-
-    await loadLinks();
+        "☀";
 
 }
 
@@ -1206,4 +1320,15 @@ filterStatus.addEventListener(
 
 loadTheme();
 
-refreshData();
+
+(async function init() {
+
+    await loadLinks();
+
+    /*
+     * Memicu GitHub Actions di background.
+     * Website tidak menunggu checker selesai.
+     */
+    triggerSyncInBackground();
+
+})();
