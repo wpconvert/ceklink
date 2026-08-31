@@ -1,5 +1,5 @@
 const API_URL =
-    "https://script.google.com/macros/s/AKfycbx3DGiJZ43jfjqjgM4m7VN1_05WnDV02mZgTjPPxL_jksHDSiCtyCSUQRSWY53VgpLNqA/exec";
+    "https://script.google.com/macros/s/AKfycbx5bW-rIKnz7t-C73-b9xr6phx2DITmpFTji6ggFy0VTWC9zLMB7bvu3tzXL5zLvgj_7A/exec";
 
 const SYNC_COOLDOWN_MS = 90000;
 const CHECK_POLL_INTERVAL_MS = 10000;
