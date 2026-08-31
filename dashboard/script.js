@@ -2,17 +2,12 @@ const API_URL =
     "https://script.google.com/macros/s/AKfycbzcRn5ZFxlmN7pCGmfjuKqRMG24lLshWRKDblqPAAzvczFPoN6HbzIuIwy7vRLC1eLDyw/exec";
 
 const SYNC_COOLDOWN_MS = 90000;
-
 const CHECK_POLL_INTERVAL_MS = 10000;
-
 const CHECK_MAX_WAIT_MS = 150000;
 
 let links = [];
-
 let activeCheck = false;
-
 let checkStartedAt = 0;
-
 
 const urlInput =
     document.getElementById("urlInput");
@@ -145,9 +140,7 @@ function apiRequest(params) {
 
                 finished = true;
 
-                clearTimeout(
-                    timeout
-                );
+                clearTimeout(timeout);
 
                 cleanup();
 
@@ -164,9 +157,7 @@ function apiRequest(params) {
 
                 finished = true;
 
-                clearTimeout(
-                    timeout
-                );
+                clearTimeout(timeout);
 
                 cleanup();
 
@@ -175,9 +166,7 @@ function apiRequest(params) {
             }
 
 
-            window[
-                callbackName
-            ] =
+            window[callbackName] =
                 function(data) {
 
                     finishSuccess(data);
@@ -462,7 +451,7 @@ async function addLink() {
 
         /*
          * Setelah link baru ditambahkan,
-         * minta checker berjalan.
+         * mulai proses pengecekan di background.
          */
         triggerSyncInBackground(
             true
@@ -489,52 +478,6 @@ async function addLink() {
             false;
 
     }
-
-}
-
-
-async function checkUrl(id) {
-
-    if (activeCheck) {
-
-        showMessage(
-            "Pengecekan sedang berjalan.",
-            "error"
-        );
-
-        return;
-
-    }
-
-
-    const link =
-        links.find(
-            function(item) {
-
-                return String(
-                    item.id
-                ) ===
-                String(id);
-
-            }
-        );
-
-
-    if (!link) {
-
-        showMessage(
-            "Link tidak ditemukan.",
-            "error"
-        );
-
-        return;
-
-    }
-
-
-    await runFullCheck(
-        id
-    );
 
 }
 
@@ -567,16 +510,12 @@ async function checkAllLinks() {
     }
 
 
-    await runFullCheck(
-        null
-    );
+    await runFullCheck();
 
 }
 
 
-async function runFullCheck(
-    targetId
-) {
+async function runFullCheck() {
 
     if (activeCheck) {
         return;
@@ -591,17 +530,14 @@ async function runFullCheck(
 
 
     /*
-     * Karena workflow GitHub memproses
-     * semua domain di Sheets, semua baris
-     * langsung ditampilkan sebagai CHECKING.
+     * Semua baris langsung berubah menjadi
+     * status MENGECEK di tampilan.
      */
-    renderCheckingState();
-
+    render();
 
     setCheckingControls(
         true
     );
-
 
     showCheckModal();
 
@@ -636,7 +572,7 @@ async function runFullCheck(
 
 
         modalText.textContent =
-            "Checker sedang berjalan. Semua link sedang diperiksa...";
+            "Semua link sedang diperiksa. Mohon tunggu...";
 
 
         const completed =
@@ -670,66 +606,10 @@ async function runFullCheck(
         finishCheckModal();
 
 
-        if (
-            targetId !== null
-        ) {
-
-            const updated =
-                links.find(
-                    function(item) {
-
-                        return String(
-                            item.id
-                        ) ===
-                        String(
-                            targetId
-                        );
-
-                    }
-                );
-
-
-            if (updated) {
-
-                if (
-                    updated.status ===
-                    "nawala"
-                ) {
-
-                    showMessage(
-                        "Domain terdeteksi NAWALA.",
-                        "error"
-                    );
-
-                } else if (
-                    updated.status ===
-                    "normal"
-                ) {
-
-                    showMessage(
-                        "Domain NORMAL.",
-                        "success"
-                    );
-
-                } else {
-
-                    showMessage(
-                        "Status belum dapat dipastikan.",
-                        "error"
-                    );
-
-                }
-
-            }
-
-        } else {
-
-            showMessage(
-                "Semua link selesai diperiksa.",
-                "success"
-            );
-
-        }
+        showMessage(
+            "Semua link selesai diperiksa.",
+            "success"
+        );
 
 
     } catch (error) {
@@ -756,11 +636,9 @@ async function runFullCheck(
         activeCheck =
             false;
 
-
         setCheckingControls(
             false
         );
-
 
         render();
 
@@ -791,7 +669,8 @@ async function waitForCheckComplete() {
 
 
         if (
-            !result
+            !result ||
+            !result.success
         ) {
 
             continue;
@@ -832,8 +711,7 @@ async function waitForCheckComplete() {
                     const checkedTime =
                         new Date(
                             item.lastChecked
-                        )
-                        .getTime();
+                        ).getTime();
 
 
                     return (
@@ -876,6 +754,7 @@ async function getLatestLinks() {
             action:
                 "list"
         });
+
 
     } catch (error) {
 
@@ -1046,6 +925,7 @@ function setCheckingControls(
         checkAllButton.disabled =
             checking;
 
+
         if (checking) {
 
             checkAllButton.dataset.originalText =
@@ -1065,35 +945,6 @@ function setCheckingControls(
         }
 
     }
-
-
-    /*
-     * Tombol tambah tetap boleh digunakan,
-     * tetapi tombol Cek dinonaktifkan.
-     */
-    document
-        .querySelectorAll(
-            ".btn-check"
-        )
-        .forEach(
-            function(button) {
-
-                button.disabled =
-                    checking;
-
-            }
-        );
-
-}
-
-
-function renderCheckingState() {
-
-    /*
-     * Hanya mengubah tampilan lokal.
-     * Google Sheets tidak diubah menjadi "checking".
-     */
-    render();
 
 }
 
@@ -1295,9 +1146,7 @@ function closeCheckModal() {
     }
 
 
-    if (
-        activeCheck
-    ) {
+    if (activeCheck) {
 
         return;
 
@@ -1424,7 +1273,10 @@ function getDisplayStatus(
     }
 
 
-    return item.status || "unchecked";
+    return (
+        item.status ||
+        "unchecked"
+    );
 
 }
 
@@ -1533,25 +1385,6 @@ function render() {
 
                 <td>
                     <div class="action-group">
-
-                        <button
-                            class="btn-action btn-check"
-                            data-check-id="${escapeHtml(
-                                String(item.id)
-                            )}"
-                            ${
-                                activeCheck
-                                    ? "disabled"
-                                    : ""
-                            }
-                            type="button"
-                        >
-                            ${
-                                activeCheck
-                                    ? "⏳ Mengecek..."
-                                    : "🔍 Cek"
-                            }
-                        </button>
 
                         <button
                             class="btn-action btn-delete"
@@ -1845,9 +1678,7 @@ function toggleTheme() {
 }
 
 
-if (
-    themeToggle
-) {
+if (themeToggle) {
 
     themeToggle.addEventListener(
         "click",
@@ -1857,9 +1688,7 @@ if (
 }
 
 
-if (
-    addButton
-) {
+if (addButton) {
 
     addButton.addEventListener(
         "click",
@@ -1869,9 +1698,7 @@ if (
 }
 
 
-if (
-    urlInput
-) {
+if (urlInput) {
 
     urlInput.addEventListener(
         "keydown",
@@ -1894,9 +1721,7 @@ if (
 }
 
 
-if (
-    searchInput
-) {
+if (searchInput) {
 
     searchInput.addEventListener(
         "input",
@@ -1906,9 +1731,7 @@ if (
 }
 
 
-if (
-    filterStatus
-) {
+if (filterStatus) {
 
     filterStatus.addEventListener(
         "change",
@@ -1918,9 +1741,7 @@ if (
 }
 
 
-if (
-    checkAllButton
-) {
+if (checkAllButton) {
 
     checkAllButton.addEventListener(
         "click",
@@ -1930,38 +1751,15 @@ if (
 }
 
 
-if (
-    linkTable
-) {
+/*
+ * Tombol Hapus ditangani di satu tempat.
+ * Tidak menggunakan onclick inline.
+ */
+if (linkTable) {
 
     linkTable.addEventListener(
         "click",
         async function(event) {
-
-            const checkButton =
-                event.target.closest(
-                    "[data-check-id]"
-                );
-
-
-            if (
-                checkButton
-            ) {
-
-                const id =
-                    checkButton.getAttribute(
-                        "data-check-id"
-                    );
-
-
-                await checkUrl(
-                    id
-                );
-
-                return;
-
-            }
-
 
             const deleteButton =
                 event.target.closest(
@@ -1970,20 +1768,23 @@ if (
 
 
             if (
-                deleteButton
+                !deleteButton
             ) {
 
-                const id =
-                    deleteButton.getAttribute(
-                        "data-delete-id"
-                    );
-
-
-                await deleteLink(
-                    id
-                );
+                return;
 
             }
+
+
+            const id =
+                deleteButton.getAttribute(
+                    "data-delete-id"
+                );
+
+
+            await deleteLink(
+                id
+            );
 
         }
     );
@@ -1991,9 +1792,118 @@ if (
 }
 
 
-if (
-    modalClose
+async function deleteLink(
+    id
 ) {
+
+    if (!id) {
+
+        showMessage(
+            "ID link tidak ditemukan.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    const confirmed =
+        window.confirm(
+            "Hapus link ini dari monitoring?"
+        );
+
+
+    if (!confirmed) {
+
+        return;
+
+    }
+
+
+    try {
+
+        showMessage(
+            "Menghapus link...",
+            "success"
+        );
+
+
+        const result =
+            await apiRequest({
+
+                action:
+                    "delete",
+
+                id:
+                    id
+
+            });
+
+
+        if (
+            !result ||
+            !result.success
+        ) {
+
+            showMessage(
+                result &&
+                result.message
+                    ? result.message
+                    : "Gagal menghapus link.",
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        /*
+         * Pastikan data diambil ulang
+         * dari Google Sheets.
+         */
+        const loaded =
+            await loadLinks(
+                true
+            );
+
+
+        if (!loaded) {
+
+            throw new Error(
+                "Data terbaru gagal diambil."
+            );
+
+        }
+
+
+        showMessage(
+            "Link berhasil dihapus.",
+            "success"
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "DELETE LINK ERROR:",
+            error
+        );
+
+
+        showMessage(
+            error.message ||
+            "Gagal menghapus link.",
+            "error"
+        );
+
+    }
+
+}
+
+
+if (modalClose) {
 
     modalClose.addEventListener(
         "click",
@@ -2003,9 +1913,7 @@ if (
 }
 
 
-if (
-    modalDone
-) {
+if (modalDone) {
 
     modalDone.addEventListener(
         "click",
@@ -2015,9 +1923,7 @@ if (
 }
 
 
-if (
-    checkModal
-) {
+if (checkModal) {
 
     checkModal.addEventListener(
         "click",
@@ -2046,19 +1952,14 @@ document.addEventListener(
         if (
             event.key ===
             "Escape" &&
-            !activeCheck
+            !activeCheck &&
+            checkModal &&
+            checkModal.classList.contains(
+                "show"
+            )
         ) {
 
-            if (
-                checkModal &&
-                checkModal.classList.contains(
-                    "show"
-                )
-            ) {
-
-                closeCheckModal();
-
-            }
+            closeCheckModal();
 
         }
 
@@ -2073,6 +1974,10 @@ loadTheme();
 
     await loadLinks();
 
+    /*
+     * Tetap melakukan sync otomatis
+     * saat website dibuka/refresh.
+     */
     triggerSyncInBackground();
 
 })();
