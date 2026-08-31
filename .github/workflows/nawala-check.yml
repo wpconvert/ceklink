@@ -3,14 +3,29 @@ name: Nawala Check
 on:
   workflow_dispatch:
 
+  schedule:
+    - cron: "17 * * * *"
+
 jobs:
   check:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Test GAS connection
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Check domains
         env:
           GAS_URL: ${{ secrets.GAS_URL }}
         run: |
-          echo "Testing GAS..."
-          curl -L --fail "${GAS_URL}?action=health"
+          python .github/workflows/check_nawala.py
