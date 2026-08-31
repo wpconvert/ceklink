@@ -1,139 +1,278 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbyNJpi_5Nz5huR-hzaG2wh1Pxc5LO2D0etDMAKgyaxUjIj_1sebsjdx0ivitP_mnF__mw/exec";
+const API_URL =
+    "https://script.google.com/macros/s/AKfycbwuoM9qglC30KUtqTozVwI3CRVN74HeAWn0VJbJ10YEzd9Wny7wH0XuD4NkwLnDQcitbQ/exec";
 
 let links = [];
 
-const urlInput = document.getElementById("urlInput");
-const addButton = document.getElementById("addButton");
-const linkTable = document.getElementById("linkTable");
-const emptyState = document.getElementById("emptyState");
-const searchInput = document.getElementById("searchInput");
-const filterStatus = document.getElementById("filterStatus");
-const message = document.getElementById("message");
+const urlInput =
+    document.getElementById("urlInput");
 
-const themeToggle = document.getElementById("themeToggle");
-const themeIcon = document.getElementById("themeIcon");
+const addButton =
+    document.getElementById("addButton");
+
+const linkTable =
+    document.getElementById("linkTable");
+
+const emptyState =
+    document.getElementById("emptyState");
+
+const searchInput =
+    document.getElementById("searchInput");
+
+const filterStatus =
+    document.getElementById("filterStatus");
+
+const message =
+    document.getElementById("message");
+
+const themeToggle =
+    document.getElementById("themeToggle");
+
+const themeIcon =
+    document.getElementById("themeIcon");
 
 
 function apiRequest(params) {
 
-    return new Promise((resolve, reject) => {
+    return new Promise(
+        function(resolve, reject) {
 
-        const callbackName =
-            "nawalaCallback_" +
-            Date.now() +
-            "_" +
-            Math.floor(Math.random() * 100000);
-
-        const script =
-            document.createElement("script");
-
-        const query =
-            new URLSearchParams({
-                ...params,
-                callback: callbackName
-            }).toString();
-
-        const timeout =
-            setTimeout(() => {
-
-                cleanup();
-
-                reject(
-                    new Error(
-                        "Server tidak merespons."
-                    )
+            const callbackName =
+                "nawalaCallback_" +
+                Date.now() +
+                "_" +
+                Math.floor(
+                    Math.random() * 100000
                 );
 
-            }, 15000);
+
+            const script =
+                document.createElement(
+                    "script"
+                );
 
 
-        window[callbackName] =
-            function(data) {
+            const query =
+                new URLSearchParams({
+                    ...params,
+                    callback:
+                        callbackName
+                }).toString();
 
-                clearTimeout(timeout);
+
+            let finished = false;
+
+
+            function cleanup() {
+
+                delete window[
+                    callbackName
+                ];
+
+
+                if (
+                    script.parentNode
+                ) {
+
+                    script.parentNode.removeChild(
+                        script
+                    );
+
+                }
+
+            }
+
+
+            function finishSuccess(
+                data
+            ) {
+
+                if (finished) {
+                    return;
+                }
+
+                finished = true;
 
                 cleanup();
 
                 resolve(data);
 
-            };
-
-
-        function cleanup() {
-
-            delete window[callbackName];
-
-            if (script.parentNode) {
-
-                script.parentNode.removeChild(
-                    script
-                );
-
             }
 
-        }
 
+            function finishError(
+                error
+            ) {
 
-        script.onerror =
-            function() {
+                if (finished) {
+                    return;
+                }
 
-                clearTimeout(timeout);
+                finished = true;
 
                 cleanup();
 
-                reject(
-                    new Error(
-                        "Gagal menghubungi GAS."
-                    )
+                reject(error);
+
+            }
+
+
+            const timeout =
+                setTimeout(
+                    function() {
+
+                        finishError(
+                            new Error(
+                                "Server tidak merespons."
+                            )
+                        );
+
+                    },
+                    15000
                 );
 
-            };
+
+            window[callbackName] =
+                function(data) {
+
+                    clearTimeout(
+                        timeout
+                    );
+
+                    finishSuccess(
+                        data
+                    );
+
+                };
 
 
-        script.src =
-            `${API_URL}?${query}`;
+            script.onerror =
+                function() {
 
-        document.body.appendChild(
-            script
-        );
+                    clearTimeout(
+                        timeout
+                    );
 
-    });
+                    finishError(
+                        new Error(
+                            "Gagal menghubungi GAS."
+                        )
+                    );
+
+                };
+
+
+            script.src =
+                API_URL +
+                "?" +
+                query;
+
+
+            document.body.appendChild(
+                script
+            );
+
+        }
+    );
+
 }
 
 
 function normalizeUrl(url) {
 
-    url = url.trim();
+    url =
+        String(
+            url || ""
+        ).trim();
 
-    if (!url) return "";
+
+    if (!url) {
+        return "";
+    }
+
 
     if (
-        !url.startsWith("http://") &&
-        !url.startsWith("https://")
+        !url.startsWith(
+            "http://"
+        ) &&
+        !url.startsWith(
+            "https://"
+        )
     ) {
 
-        url = "https://" + url;
+        url =
+            "https://" +
+            url;
 
     }
 
+
     return url;
+
 }
 
 
-function formatTime(timestamp) {
+function formatTime(
+    timestamp
+) {
 
-    if (!timestamp) return "-";
+    if (!timestamp) {
+        return "-";
+    }
 
-    return new Date(timestamp).toLocaleString(
+
+    const date =
+        new Date(timestamp);
+
+
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
+
+        return "-";
+
+    }
+
+
+    return date.toLocaleString(
         "id-ID",
         {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit"
+            day:
+                "2-digit",
+
+            month:
+                "short",
+
+            year:
+                "numeric",
+
+            hour:
+                "2-digit",
+
+            minute:
+                "2-digit"
         }
     );
+
+}
+
+
+function asyncDelay(
+    milliseconds
+) {
+
+    return new Promise(
+        function(resolve) {
+
+            setTimeout(
+                resolve,
+                milliseconds
+            );
+
+        }
+    );
+
 }
 
 
@@ -143,22 +282,32 @@ async function loadLinks() {
 
         const result =
             await apiRequest({
-                action: "list"
+                action:
+                    "list"
             });
 
 
-        if (!result.success) {
+        if (
+            !result ||
+            !result.success
+        ) {
 
             throw new Error(
-                result.message ||
-                "Gagal mengambil data."
+                result &&
+                result.message
+                    ? result.message
+                    : "Gagal mengambil data."
             );
 
         }
 
 
         links =
-            result.data || [];
+            Array.isArray(
+                result.data
+            )
+                ? result.data
+                : [];
 
 
         render();
@@ -173,12 +322,14 @@ async function loadLinks() {
             error
         );
 
+
         showMessage(
             "Gagal mengambil data dari server.",
             "error"
         );
 
     }
+
 }
 
 
@@ -198,6 +349,7 @@ async function addLink() {
         );
 
         return;
+
     }
 
 
@@ -205,7 +357,8 @@ async function addLink() {
 
         new URL(url);
 
-    } catch {
+
+    } catch (error) {
 
         showMessage(
             "Format URL tidak valid.",
@@ -213,10 +366,12 @@ async function addLink() {
         );
 
         return;
+
     }
 
 
-    addButton.disabled = true;
+    addButton.disabled =
+        true;
 
 
     try {
@@ -224,26 +379,35 @@ async function addLink() {
         const result =
             await apiRequest({
 
-                action: "add",
+                action:
+                    "add",
 
-                url: url
+                url:
+                    url
 
             });
 
 
-        if (!result.success) {
+        if (
+            !result ||
+            !result.success
+        ) {
 
             showMessage(
-                result.message ||
-                "Gagal menambahkan link.",
+                result &&
+                result.message
+                    ? result.message
+                    : "Gagal menambahkan link.",
                 "error"
             );
 
             return;
+
         }
 
 
-        urlInput.value = "";
+        urlInput.value =
+            "";
 
 
         showMessage(
@@ -262,6 +426,7 @@ async function addLink() {
             error
         );
 
+
         showMessage(
             "Gagal menambahkan link.",
             "error"
@@ -270,9 +435,11 @@ async function addLink() {
 
     } finally {
 
-        addButton.disabled = false;
+        addButton.disabled =
+            false;
 
     }
+
 }
 
 
@@ -280,19 +447,143 @@ async function checkUrl(id) {
 
     const link =
         links.find(
-            item =>
-                String(item.id) ===
-                String(id)
+            function(item) {
+
+                return String(
+                    item.id
+                ) ===
+                String(id);
+
+            }
         );
 
 
-    if (!link) return;
+    if (!link) {
+        return;
+    }
 
 
-    showMessage(
-        "Fitur pengecekan Nawala belum diaktifkan.",
-        "error"
-    );
+    const button =
+        document.querySelector(
+            '[data-check-id="' +
+            String(id) +
+            '"]'
+        );
+
+
+    if (button) {
+
+        button.disabled =
+            true;
+
+        button.dataset.originalText =
+            button.textContent;
+
+        button.textContent =
+            "⏳ Mengecek...";
+
+    }
+
+
+    try {
+
+        const result =
+            await apiRequest({
+
+                action:
+                    "check",
+
+                url:
+                    link.url
+
+            });
+
+
+        if (
+            !result ||
+            !result.success
+        ) {
+
+            showMessage(
+                result &&
+                result.message
+                    ? result.message
+                    : "Status belum dapat diperiksa.",
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        const index =
+            links.findIndex(
+                function(item) {
+
+                    return String(
+                        item.id
+                    ) ===
+                    String(id);
+
+                }
+            );
+
+
+        if (
+            index !== -1
+        ) {
+
+            links[index].status =
+                result.status;
+
+            links[index].lastChecked =
+                result.lastChecked ||
+                link.lastChecked ||
+                null;
+
+        }
+
+
+        render();
+
+        showMessage(
+            "Status terbaru berhasil diambil.",
+            "success"
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "CHECK ERROR:",
+            error
+        );
+
+
+        showMessage(
+            "Gagal mengecek status.",
+            "error"
+        );
+
+
+    } finally {
+
+        if (button) {
+
+            button.disabled =
+                false;
+
+            button.textContent =
+                button.dataset.originalText ||
+                "🔍 Cek";
+
+            delete button.dataset.originalText;
+
+        }
+
+    }
+
 }
 
 
@@ -314,22 +605,30 @@ async function deleteLink(id) {
         const result =
             await apiRequest({
 
-                action: "delete",
+                action:
+                    "delete",
 
-                id: id
+                id:
+                    id
 
             });
 
 
-        if (!result.success) {
+        if (
+            !result ||
+            !result.success
+        ) {
 
             showMessage(
-                result.message ||
-                "Gagal menghapus link.",
+                result &&
+                result.message
+                    ? result.message
+                    : "Gagal menghapus link.",
                 "error"
             );
 
             return;
+
         }
 
 
@@ -349,18 +648,24 @@ async function deleteLink(id) {
             error
         );
 
+
         showMessage(
             "Gagal menghapus link.",
             "error"
         );
 
     }
+
 }
 
 
-function getStatusHTML(status) {
+function getStatusHTML(
+    status
+) {
 
-    if (status === "normal") {
+    if (
+        status === "normal"
+    ) {
 
         return `
             <span class="status status-normal">
@@ -372,7 +677,9 @@ function getStatusHTML(status) {
     }
 
 
-    if (status === "nawala") {
+    if (
+        status === "nawala"
+    ) {
 
         return `
             <span class="status status-nawala">
@@ -384,12 +691,42 @@ function getStatusHTML(status) {
     }
 
 
-    if (status === "checking") {
+    if (
+        status === "checking"
+    ) {
 
         return `
             <span class="status status-unchecked">
                 <span class="status-dot"></span>
                 CHECKING...
+            </span>
+        `;
+
+    }
+
+
+    if (
+        status === "unknown"
+    ) {
+
+        return `
+            <span class="status status-unchecked">
+                <span class="status-dot"></span>
+                UNKNOWN
+            </span>
+        `;
+
+    }
+
+
+    if (
+        status === "error"
+    ) {
+
+        return `
+            <span class="status status-unchecked">
+                <span class="status-dot"></span>
+                ERROR
             </span>
         `;
 
@@ -402,6 +739,7 @@ function getStatusHTML(status) {
             BELUM DICEK
         </span>
     `;
+
 }
 
 
@@ -419,25 +757,41 @@ function render() {
 
     let filtered =
         links.filter(
-            item =>
-                item.url
-                    .toLowerCase()
-                    .includes(search)
+            function(item) {
+
+                return String(
+                    item.url || ""
+                )
+                .toLowerCase()
+                .includes(
+                    search
+                );
+
+            }
         );
 
 
-    if (filter !== "all") {
+    if (
+        filter !== "all"
+    ) {
 
         filtered =
             filtered.filter(
-                item =>
-                    item.status === filter
+                function(item) {
+
+                    return (
+                        item.status ===
+                        filter
+                    );
+
+                }
             );
 
     }
 
 
-    linkTable.innerHTML = "";
+    linkTable.innerHTML =
+        "";
 
 
     emptyState.style.display =
@@ -446,60 +800,79 @@ function render() {
             : "none";
 
 
-    filtered.forEach(item => {
+    filtered.forEach(
+        function(item) {
 
-        const row =
-            document.createElement("tr");
-
-
-        row.innerHTML = `
-
-            <td>
-                <div class="url-cell">
-                    ${escapeHtml(item.url)}
-                </div>
-            </td>
-
-            <td>
-                ${getStatusHTML(item.status)}
-            </td>
-
-            <td>
-                <span class="time-cell">
-                    ${formatTime(item.lastChecked)}
-                </span>
-            </td>
-
-            <td>
-
-                <div class="action-group">
-
-                    <button
-                        class="btn-action btn-check"
-                        onclick="checkUrl('${item.id}')"
-                    >
-                        🔍 Cek
-                    </button>
-
-                    <button
-                        class="btn-action btn-delete"
-                        onclick="deleteLink('${item.id}')"
-                    >
-                        🗑 Hapus
-                    </button>
-
-                </div>
-
-            </td>
-        `;
+            const row =
+                document.createElement(
+                    "tr"
+                );
 
 
-        linkTable.appendChild(row);
+            row.innerHTML = `
 
-    });
+                <td>
+                    <div class="url-cell">
+                        ${escapeHtml(
+                            item.url
+                        )}
+                    </div>
+                </td>
+
+                <td>
+                    ${getStatusHTML(
+                        item.status
+                    )}
+                </td>
+
+                <td>
+                    <span class="time-cell">
+                        ${formatTime(
+                            item.lastChecked
+                        )}
+                    </span>
+                </td>
+
+                <td>
+                    <div class="action-group">
+
+                        <button
+                            class="btn-action btn-check"
+                            data-check-id="${escapeHtml(
+                                String(item.id)
+                            )}"
+                            onclick="checkUrl('${escapeJs(
+                                item.id
+                            )}')"
+                        >
+                            🔍 Cek
+                        </button>
+
+                        <button
+                            class="btn-action btn-delete"
+                            onclick="deleteLink('${escapeJs(
+                                item.id
+                            )}')"
+                        >
+                            🗑 Hapus
+                        </button>
+
+                    </div>
+                </td>
+
+            `;
+
+
+            linkTable.appendChild(
+                row
+            );
+
+        }
+    );
 
 
     updateStatistics();
+
 }
 
 
@@ -511,59 +884,128 @@ function updateStatistics() {
 
     const normal =
         links.filter(
-            item =>
-                item.status === "normal"
+            function(item) {
+
+                return (
+                    item.status ===
+                    "normal"
+                );
+
+            }
         ).length;
 
 
     const nawala =
         links.filter(
-            item =>
-                item.status === "nawala"
+            function(item) {
+
+                return (
+                    item.status ===
+                    "nawala"
+                );
+
+            }
         ).length;
 
 
     const unchecked =
         links.filter(
-            item =>
-                item.status === "unchecked"
+            function(item) {
+
+                return (
+                    item.status ===
+                        "unchecked" ||
+                    item.status ===
+                        "unknown"
+                );
+
+            }
         ).length;
 
 
-    document.getElementById(
-        "totalLinks"
-    ).textContent = total;
+    const totalElement =
+        document.getElementById(
+            "totalLinks"
+        );
+
+    const normalElement =
+        document.getElementById(
+            "normalLinks"
+        );
+
+    const blockedElement =
+        document.getElementById(
+            "blockedLinks"
+        );
+
+    const uncheckedElement =
+        document.getElementById(
+            "uncheckedLinks"
+        );
 
 
-    document.getElementById(
-        "normalLinks"
-    ).textContent = normal;
+    if (totalElement) {
+
+        totalElement.textContent =
+            total;
+
+    }
 
 
-    document.getElementById(
-        "blockedLinks"
-    ).textContent = nawala;
+    if (normalElement) {
+
+        normalElement.textContent =
+            normal;
+
+    }
 
 
-    document.getElementById(
-        "uncheckedLinks"
-    ).textContent = unchecked;
+    if (blockedElement) {
+
+        blockedElement.textContent =
+            nawala;
+
+    }
+
+
+    if (uncheckedElement) {
+
+        uncheckedElement.textContent =
+            unchecked;
+
+    }
+
 }
 
 
 function updateLastUpdate() {
 
-    document.getElementById(
-        "lastUpdate"
-    ).textContent =
+    const element =
+        document.getElementById(
+            "lastUpdate"
+        );
+
+
+    if (!element) {
+        return;
+    }
+
+
+    element.textContent =
         new Date().toLocaleTimeString(
             "id-ID",
             {
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit"
+                hour:
+                    "2-digit",
+
+                minute:
+                    "2-digit",
+
+                second:
+                    "2-digit"
             }
         );
+
 }
 
 
@@ -583,31 +1025,72 @@ function showMessage(
 
 
     setTimeout(
-        () => {
+        function() {
 
-            message.textContent = "";
+            message.textContent =
+                "";
 
-            message.className = "";
+            message.className =
+                "";
 
         },
         3000
     );
+
 }
 
 
-function escapeHtml(value) {
+function escapeHtml(
+    value
+) {
 
     const div =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
+
 
     div.textContent =
-        value;
+        String(
+            value || ""
+        );
+
 
     return div.innerHTML;
+
 }
 
 
-/* THEME */
+function escapeJs(
+    value
+) {
+
+    return String(
+        value || ""
+    )
+    .replace(
+        /\\/g,
+        "\\\\"
+    )
+    .replace(
+        /'/g,
+        "\\'"
+    )
+    .replace(
+        /"/g,
+        "&quot;"
+    )
+    .replace(
+        /\r/g,
+        ""
+    )
+    .replace(
+        /\n/g,
+        "\\n"
+    );
+
+}
+
 
 function loadTheme() {
 
@@ -617,13 +1100,16 @@ function loadTheme() {
         );
 
 
-    if (savedTheme === "dark") {
+    if (
+        savedTheme === "dark"
+    ) {
 
         document.body.classList.add(
             "dark"
         );
 
-        themeIcon.textContent = "☀";
+        themeIcon.textContent =
+            "☀";
 
     } else {
 
@@ -631,9 +1117,11 @@ function loadTheme() {
             "dark"
         );
 
-        themeIcon.textContent = "☀";
+        themeIcon.textContent =
+            "☀";
 
     }
+
 }
 
 
@@ -652,12 +1140,24 @@ function toggleTheme() {
 
     localStorage.setItem(
         "nawalaTheme",
-        dark ? "dark" : "light"
+        dark
+            ? "dark"
+            : "light"
     );
 
 
     themeIcon.textContent =
-        dark ? "☀" : "☀";
+        dark
+            ? "☀"
+            : "☀";
+
+}
+
+
+async function refreshData() {
+
+    await loadLinks();
+
 }
 
 
@@ -675,9 +1175,14 @@ addButton.addEventListener(
 
 urlInput.addEventListener(
     "keydown",
-    event => {
+    function(event) {
 
-        if (event.key === "Enter") {
+        if (
+            event.key ===
+            "Enter"
+        ) {
+
+            event.preventDefault();
 
             addLink();
 
@@ -701,4 +1206,4 @@ filterStatus.addEventListener(
 
 loadTheme();
 
-loadLinks();
+refreshData();
