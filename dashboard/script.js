@@ -2,9 +2,17 @@ const API_URL =
     "https://script.google.com/macros/s/AKfycbzcRn5ZFxlmN7pCGmfjuKqRMG24lLshWRKDblqPAAzvczFPoN6HbzIuIwy7vRLC1eLDyw/exec";
 
 const SYNC_COOLDOWN_MS = 90000;
-const SYNC_REFRESH_DELAY_MS = 65000;
+
+const CHECK_POLL_INTERVAL_MS = 10000;
+
+const CHECK_MAX_WAIT_MS = 150000;
 
 let links = [];
+
+let activeCheck = false;
+
+let checkStartedAt = 0;
+
 
 const urlInput =
     document.getElementById("urlInput");
@@ -33,6 +41,42 @@ const themeToggle =
 const themeIcon =
     document.getElementById("themeIcon");
 
+const checkAllButton =
+    document.getElementById("checkAllButton");
+
+const checkModal =
+    document.getElementById("checkModal");
+
+const modalClose =
+    document.getElementById("modalClose");
+
+const modalLoader =
+    document.getElementById("modalLoader");
+
+const modalSuccessIcon =
+    document.getElementById("modalSuccessIcon");
+
+const modalTitle =
+    document.getElementById("modalTitle");
+
+const modalText =
+    document.getElementById("modalText");
+
+const modalProgress =
+    document.getElementById("modalProgress");
+
+const modalSummary =
+    document.getElementById("modalSummary");
+
+const modalNormal =
+    document.getElementById("modalNormal");
+
+const modalNawala =
+    document.getElementById("modalNawala");
+
+const modalDone =
+    document.getElementById("modalDone");
+
 
 function apiRequest(params) {
 
@@ -48,14 +92,13 @@ function apiRequest(params) {
                 );
 
             const script =
-                document.createElement(
-                    "script"
-                );
+                document.createElement("script");
 
             const query =
                 new URLSearchParams({
                     ...params,
-                    callback: callbackName
+                    callback:
+                        callbackName
                 }).toString();
 
             let finished = false;
@@ -102,7 +145,9 @@ function apiRequest(params) {
 
                 finished = true;
 
-                clearTimeout(timeout);
+                clearTimeout(
+                    timeout
+                );
 
                 cleanup();
 
@@ -119,7 +164,9 @@ function apiRequest(params) {
 
                 finished = true;
 
-                clearTimeout(timeout);
+                clearTimeout(
+                    timeout
+                );
 
                 cleanup();
 
@@ -128,7 +175,9 @@ function apiRequest(params) {
             }
 
 
-            window[callbackName] =
+            window[
+                callbackName
+            ] =
                 function(data) {
 
                     finishSuccess(data);
@@ -166,30 +215,30 @@ function apiRequest(params) {
 
 function normalizeUrl(url) {
 
-    url =
+    let value =
         String(
             url || ""
         ).trim();
 
 
-    if (!url) {
+    if (!value) {
         return "";
     }
 
 
     if (
-        !url.startsWith("http://") &&
-        !url.startsWith("https://")
+        !value.startsWith("http://") &&
+        !value.startsWith("https://")
     ) {
 
-        url =
+        value =
             "https://" +
-            url;
+            value;
 
     }
 
 
-    return url;
+    return value;
 
 }
 
@@ -202,7 +251,9 @@ function formatTime(timestamp) {
 
 
     const date =
-        new Date(timestamp);
+        new Date(
+            timestamp
+        );
 
 
     if (
@@ -219,11 +270,20 @@ function formatTime(timestamp) {
     return date.toLocaleString(
         "id-ID",
         {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit"
+            day:
+                "2-digit",
+
+            month:
+                "short",
+
+            year:
+                "numeric",
+
+            hour:
+                "2-digit",
+
+            minute:
+                "2-digit"
         }
     );
 
@@ -254,7 +314,8 @@ async function loadLinks(
 
         const result =
             await apiRequest({
-                action: "list"
+                action:
+                    "list"
             });
 
 
@@ -359,9 +420,11 @@ async function addLink() {
         const result =
             await apiRequest({
 
-                action: "add",
+                action:
+                    "add",
 
-                url: url
+                url:
+                    url
 
             });
 
@@ -398,8 +461,8 @@ async function addLink() {
 
 
         /*
-         * Link baru langsung meminta
-         * checker dijalankan di background.
+         * Setelah link baru ditambahkan,
+         * minta checker berjalan.
          */
         triggerSyncInBackground(
             true
@@ -432,6 +495,18 @@ async function addLink() {
 
 async function checkUrl(id) {
 
+    if (activeCheck) {
+
+        showMessage(
+            "Pengecekan sedang berjalan.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
     const link =
         links.find(
             function(item) {
@@ -446,38 +521,99 @@ async function checkUrl(id) {
 
 
     if (!link) {
+
+        showMessage(
+            "Link tidak ditemukan.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    await runFullCheck(
+        id
+    );
+
+}
+
+
+async function checkAllLinks() {
+
+    if (activeCheck) {
+
+        showMessage(
+            "Pengecekan sedang berjalan.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    if (
+        links.length === 0
+    ) {
+
+        showMessage(
+            "Belum ada link untuk dicek.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    await runFullCheck(
+        null
+    );
+
+}
+
+
+async function runFullCheck(
+    targetId
+) {
+
+    if (activeCheck) {
         return;
     }
 
 
-    const button =
-        document.querySelector(
-            '[data-check-id="' +
-            String(id) +
-            '"]'
-        );
+    activeCheck =
+        true;
+
+    checkStartedAt =
+        Date.now();
 
 
-    if (button) {
+    /*
+     * Karena workflow GitHub memproses
+     * semua domain di Sheets, semua baris
+     * langsung ditampilkan sebagai CHECKING.
+     */
+    renderCheckingState();
 
-        button.disabled =
-            true;
 
-        button.dataset.originalText =
-            button.textContent;
+    setCheckingControls(
+        true
+    );
 
-        button.textContent =
-            "⏳ Mengecek...";
 
-    }
+    showCheckModal();
 
 
     try {
 
-        showMessage(
-            "Pengecekan semua link sedang dimulai...",
-            "success"
-        );
+        modalTitle.textContent =
+            "Pengecekan Link";
+
+
+        modalText.textContent =
+            "Memulai pengecekan semua link...";
 
 
         const syncResult =
@@ -499,28 +635,30 @@ async function checkUrl(id) {
         }
 
 
-        showMessage(
-            "Checker sedang berjalan. Tunggu sekitar 1 menit...",
-            "success"
-        );
+        modalText.textContent =
+            "Checker sedang berjalan. Semua link sedang diperiksa...";
 
 
-        /*
-         * Tunggu GitHub Actions menyelesaikan
-         * pemeriksaan lalu ambil data Sheets terbaru.
-         */
-        await sleep(
-            SYNC_REFRESH_DELAY_MS
-        );
+        const completed =
+            await waitForCheckComplete();
 
 
-        const success =
+        if (!completed) {
+
+            throw new Error(
+                "Pengecekan membutuhkan waktu lebih lama dari perkiraan."
+            );
+
+        }
+
+
+        const loaded =
             await loadLinks(
                 true
             );
 
 
-        if (!success) {
+        if (!loaded) {
 
             throw new Error(
                 "Status terbaru gagal diambil."
@@ -529,56 +667,65 @@ async function checkUrl(id) {
         }
 
 
-        const updatedLink =
-            links.find(
-                function(item) {
-
-                    return String(
-                        item.id
-                    ) ===
-                    String(id);
-
-                }
-            );
+        finishCheckModal();
 
 
         if (
-            updatedLink
+            targetId !== null
         ) {
 
-            if (
-                updatedLink.status ===
-                "nawala"
-            ) {
+            const updated =
+                links.find(
+                    function(item) {
 
-                showMessage(
-                    "Domain terdeteksi NAWALA.",
-                    "error"
+                        return String(
+                            item.id
+                        ) ===
+                        String(
+                            targetId
+                        );
+
+                    }
                 );
 
-            } else if (
-                updatedLink.status ===
-                "normal"
-            ) {
 
-                showMessage(
-                    "Domain NORMAL.",
-                    "success"
-                );
+            if (updated) {
 
-            } else {
+                if (
+                    updated.status ===
+                    "nawala"
+                ) {
 
-                showMessage(
-                    "Status belum dapat dipastikan.",
-                    "error"
-                );
+                    showMessage(
+                        "Domain terdeteksi NAWALA.",
+                        "error"
+                    );
+
+                } else if (
+                    updated.status ===
+                    "normal"
+                ) {
+
+                    showMessage(
+                        "Domain NORMAL.",
+                        "success"
+                    );
+
+                } else {
+
+                    showMessage(
+                        "Status belum dapat dipastikan.",
+                        "error"
+                    );
+
+                }
 
             }
 
         } else {
 
             showMessage(
-                "Status terbaru sudah diperbarui.",
+                "Semua link selesai diperiksa.",
                 "success"
             );
 
@@ -588,71 +735,242 @@ async function checkUrl(id) {
     } catch (error) {
 
         console.error(
-            "CHECK ERROR:",
+            "FULL CHECK ERROR:",
             error
         );
 
 
-        showMessage(
+        await loadLinks(
+            true
+        );
+
+
+        showCheckModalError(
             error.message ||
-            "Gagal menjalankan pengecekan.",
-            "error"
+            "Gagal menjalankan pengecekan."
         );
 
 
     } finally {
 
-        if (button) {
+        activeCheck =
+            false;
 
-            button.disabled =
-                false;
 
-            button.textContent =
-                button.dataset.originalText ||
-                "🔍 Cek";
+        setCheckingControls(
+            false
+        );
 
-            delete button.dataset.originalText;
 
-        }
+        render();
 
     }
 
 }
 
 
-async function triggerSync() {
+async function waitForCheckComplete() {
 
-    try {
-
-        const result =
-            await apiRequest({
-                action: "sync"
-            });
+    const started =
+        Date.now();
 
 
-        return result;
+    while (
+        Date.now() -
+        started <
+        CHECK_MAX_WAIT_MS
+    ) {
 
-
-    } catch (error) {
-
-        console.error(
-            "SYNC ERROR:",
-            error
+        await sleep(
+            CHECK_POLL_INTERVAL_MS
         );
 
 
-        return {
+        const result =
+            await getLatestLinks();
 
-            success: false,
 
-            status: "error",
+        if (
+            !result
+        ) {
 
-            message:
-                error.message
+            continue;
 
-        };
+        }
+
+
+        const data =
+            Array.isArray(
+                result.data
+            )
+                ? result.data
+                : [];
+
+
+        if (
+            data.length === 0
+        ) {
+
+            return true;
+
+        }
+
+
+        const allChecked =
+            data.every(
+                function(item) {
+
+                    if (
+                        !item.lastChecked
+                    ) {
+
+                        return false;
+
+                    }
+
+
+                    const checkedTime =
+                        new Date(
+                            item.lastChecked
+                        )
+                        .getTime();
+
+
+                    return (
+                        checkedTime >=
+                        checkStartedAt - 10000
+                    );
+
+                }
+            );
+
+
+        if (
+            allChecked
+        ) {
+
+            links =
+                data;
+
+            render();
+
+            updateLastUpdate();
+
+            return true;
+
+        }
 
     }
+
+
+    return false;
+
+}
+
+
+async function getLatestLinks() {
+
+    try {
+
+        return await apiRequest({
+            action:
+                "list"
+        });
+
+    } catch (error) {
+
+        console.warn(
+            "POLL ERROR:",
+            error
+        );
+
+        return null;
+
+    }
+
+}
+
+
+function triggerSync() {
+
+    return apiRequest({
+        action:
+            "sync"
+    })
+    .catch(
+        function(error) {
+
+            return {
+
+                success:
+                    false,
+
+                status:
+                    "error",
+
+                message:
+                    error.message
+
+            };
+
+        }
+    );
+
+}
+
+
+function triggerSyncInBackground(
+    force = false
+) {
+
+    if (
+        !force &&
+        !shouldTriggerSync()
+    ) {
+
+        return;
+
+    }
+
+
+    setLastSyncTrigger();
+
+
+    triggerSync()
+        .then(
+            function(result) {
+
+                if (
+                    !result ||
+                    !result.success
+                ) {
+
+                    console.warn(
+                        "BACKGROUND SYNC FAILED:",
+                        result
+                    );
+
+                    return;
+
+                }
+
+
+                console.log(
+                    "BACKGROUND SYNC STARTED"
+                );
+
+            }
+        )
+        .catch(
+            function(error) {
+
+                console.warn(
+                    "BACKGROUND SYNC ERROR:",
+                    error
+                );
+
+            }
+        );
 
 }
 
@@ -717,64 +1035,300 @@ function shouldTriggerSync() {
 }
 
 
-async function triggerSyncInBackground(
-    force = false
+function setCheckingControls(
+    checking
 ) {
 
     if (
-        !force &&
-        !shouldTriggerSync()
+        checkAllButton
     ) {
 
-        return;
+        checkAllButton.disabled =
+            checking;
 
-    }
+        if (checking) {
 
+            checkAllButton.dataset.originalText =
+                checkAllButton.textContent;
 
-    setLastSyncTrigger();
+            checkAllButton.textContent =
+                "⏳ Mengecek Semua...";
 
+        } else {
 
-    const result =
-        await triggerSync();
+            checkAllButton.textContent =
+                checkAllButton.dataset.originalText ||
+                "↻ Cek Semua Link";
 
+            delete checkAllButton.dataset.originalText;
 
-    if (
-        !result ||
-        !result.success
-    ) {
-
-        console.warn(
-            "SYNC NOT QUEUED:",
-            result
-        );
-
-        return;
+        }
 
     }
 
 
     /*
-     * Tidak menahan tampilan website.
-     * Setelah checker selesai, ambil hasil terbaru.
+     * Tombol tambah tetap boleh digunakan,
+     * tetapi tombol Cek dinonaktifkan.
      */
-    setTimeout(
-        async function() {
+    document
+        .querySelectorAll(
+            ".btn-check"
+        )
+        .forEach(
+            function(button) {
 
-            await loadLinks(
-                true
-            );
+                button.disabled =
+                    checking;
 
-        },
-        SYNC_REFRESH_DELAY_MS
+            }
+        );
+
+}
+
+
+function renderCheckingState() {
+
+    /*
+     * Hanya mengubah tampilan lokal.
+     * Google Sheets tidak diubah menjadi "checking".
+     */
+    render();
+
+}
+
+
+function showCheckModal() {
+
+    if (!checkModal) {
+        return;
+    }
+
+
+    modalLoader.style.display =
+        "flex";
+
+
+    modalSuccessIcon.classList.remove(
+        "show"
+    );
+
+
+    modalProgress.style.display =
+        "block";
+
+
+    modalSummary.classList.remove(
+        "show"
+    );
+
+
+    modalDone.classList.remove(
+        "show"
+    );
+
+
+    modalClose.style.display =
+        "none";
+
+
+    modalTitle.textContent =
+        "Pengecekan Link";
+
+
+    modalText.textContent =
+        "Memulai pengecekan...";
+
+
+    checkModal.classList.add(
+        "show"
+    );
+
+
+    checkModal.setAttribute(
+        "aria-hidden",
+        "false"
+    );
+
+
+    document.body.classList.add(
+        "modal-open"
     );
 
 }
 
 
-function getStatusHTML(status) {
+function finishCheckModal() {
+
+    const normalCount =
+        links.filter(
+            function(item) {
+
+                return (
+                    item.status ===
+                    "normal"
+                );
+
+            }
+        ).length;
+
+
+    const nawalaCount =
+        links.filter(
+            function(item) {
+
+                return (
+                    item.status ===
+                    "nawala"
+                );
+
+            }
+        ).length;
+
+
+    modalLoader.style.display =
+        "none";
+
+
+    modalProgress.style.display =
+        "none";
+
+
+    modalSuccessIcon.classList.add(
+        "show"
+    );
+
+
+    modalTitle.textContent =
+        "Pengecekan Selesai";
+
+
+    modalText.textContent =
+        "Status seluruh link sudah diperbarui.";
+
+
+    modalNormal.textContent =
+        normalCount;
+
+
+    modalNawala.textContent =
+        nawalaCount;
+
+
+    modalSummary.classList.add(
+        "show"
+    );
+
+
+    modalDone.classList.add(
+        "show"
+    );
+
+
+    modalClose.style.display =
+        "flex";
+
+}
+
+
+function showCheckModalError(
+    text
+) {
+
+    modalLoader.style.display =
+        "none";
+
+
+    modalProgress.style.display =
+        "none";
+
+
+    modalSuccessIcon.classList.remove(
+        "show"
+    );
+
+
+    modalSummary.classList.remove(
+        "show"
+    );
+
+
+    modalDone.classList.add(
+        "show"
+    );
+
+
+    modalClose.style.display =
+        "flex";
+
+
+    modalTitle.textContent =
+        "Pengecekan Gagal";
+
+
+    modalText.textContent =
+        text;
+
+
+    checkModal.classList.add(
+        "show"
+    );
+
+
+    checkModal.setAttribute(
+        "aria-hidden",
+        "false"
+    );
+
+
+    document.body.classList.add(
+        "modal-open"
+    );
+
+}
+
+
+function closeCheckModal() {
+
+    if (!checkModal) {
+        return;
+    }
+
 
     if (
-        status === "normal"
+        activeCheck
+    ) {
+
+        return;
+
+    }
+
+
+    checkModal.classList.remove(
+        "show"
+    );
+
+
+    checkModal.setAttribute(
+        "aria-hidden",
+        "true"
+    );
+
+
+    document.body.classList.remove(
+        "modal-open"
+    );
+
+}
+
+
+function getStatusHTML(
+    status
+) {
+
+    if (
+        status ===
+        "normal"
     ) {
 
         return `
@@ -788,7 +1342,8 @@ function getStatusHTML(status) {
 
 
     if (
-        status === "nawala"
+        status ===
+        "nawala"
     ) {
 
         return `
@@ -802,13 +1357,14 @@ function getStatusHTML(status) {
 
 
     if (
-        status === "checking"
+        status ===
+        "checking"
     ) {
 
         return `
             <span class="status status-unchecked">
                 <span class="status-dot"></span>
-                CHECKING...
+                ⏳ MENGECEK...
             </span>
         `;
 
@@ -816,7 +1372,8 @@ function getStatusHTML(status) {
 
 
     if (
-        status === "unknown"
+        status ===
+        "unknown"
     ) {
 
         return `
@@ -830,7 +1387,8 @@ function getStatusHTML(status) {
 
 
     if (
-        status === "error"
+        status ===
+        "error"
     ) {
 
         return `
@@ -849,6 +1407,24 @@ function getStatusHTML(status) {
             BELUM DICEK
         </span>
     `;
+
+}
+
+
+function getDisplayStatus(
+    item
+) {
+
+    if (
+        activeCheck
+    ) {
+
+        return "checking";
+
+    }
+
+
+    return item.status || "unchecked";
 
 }
 
@@ -882,7 +1458,8 @@ function render() {
 
 
     if (
-        filter !== "all"
+        filter !==
+        "all"
     ) {
 
         filtered =
@@ -905,7 +1482,8 @@ function render() {
 
 
     emptyState.style.display =
-        filtered.length === 0
+        filtered.length ===
+        0
             ? "block"
             : "none";
 
@@ -916,6 +1494,12 @@ function render() {
             const row =
                 document.createElement(
                     "tr"
+                );
+
+
+            const displayStatus =
+                getDisplayStatus(
+                    item
                 );
 
 
@@ -931,15 +1515,19 @@ function render() {
 
                 <td>
                     ${getStatusHTML(
-                        item.status
+                        displayStatus
                     )}
                 </td>
 
                 <td>
                     <span class="time-cell">
-                        ${formatTime(
-                            item.lastChecked
-                        )}
+                        ${
+                            activeCheck
+                                ? "Sedang diperiksa..."
+                                : formatTime(
+                                    item.lastChecked
+                                )
+                        }
                     </span>
                 </td>
 
@@ -951,18 +1539,26 @@ function render() {
                             data-check-id="${escapeHtml(
                                 String(item.id)
                             )}"
-                            onclick="checkUrl('${escapeJs(
-                                item.id
-                            )}')"
+                            ${
+                                activeCheck
+                                    ? "disabled"
+                                    : ""
+                            }
+                            type="button"
                         >
-                            🔍 Cek
+                            ${
+                                activeCheck
+                                    ? "⏳ Mengecek..."
+                                    : "🔍 Cek"
+                            }
                         </button>
 
                         <button
                             class="btn-action btn-delete"
-                            onclick="deleteLink('${escapeJs(
-                                item.id
-                            )}')"
+                            data-delete-id="${escapeHtml(
+                                String(item.id)
+                            )}"
+                            type="button"
                         >
                             🗑 Hapus
                         </button>
@@ -1057,7 +1653,9 @@ function updateStatistics() {
         );
 
 
-    if (totalElement) {
+    if (
+        totalElement
+    ) {
 
         totalElement.textContent =
             total;
@@ -1065,7 +1663,9 @@ function updateStatistics() {
     }
 
 
-    if (normalElement) {
+    if (
+        normalElement
+    ) {
 
         normalElement.textContent =
             normal;
@@ -1073,7 +1673,9 @@ function updateStatistics() {
     }
 
 
-    if (blockedElement) {
+    if (
+        blockedElement
+    ) {
 
         blockedElement.textContent =
             nawala;
@@ -1081,7 +1683,9 @@ function updateStatistics() {
     }
 
 
-    if (uncheckedElement) {
+    if (
+        uncheckedElement
+    ) {
 
         uncheckedElement.textContent =
             unchecked;
@@ -1137,7 +1741,8 @@ function showMessage(
 
 
     message.className =
-        type === "success"
+        type ===
+        "success"
             ? "message-success"
             : "message-error";
 
@@ -1175,37 +1780,6 @@ function escapeHtml(
 
 
     return div.innerHTML;
-
-}
-
-
-function escapeJs(
-    value
-) {
-
-    return String(
-        value || ""
-    )
-    .replace(
-        /\\/g,
-        "\\\\"
-    )
-    .replace(
-        /'/g,
-        "\\'"
-    )
-    .replace(
-        /"/g,
-        "&quot;"
-    )
-    .replace(
-        /\r/g,
-        ""
-    )
-    .replace(
-        /\n/g,
-        "\\n"
-    );
 
 }
 
@@ -1271,46 +1845,224 @@ function toggleTheme() {
 }
 
 
-themeToggle.addEventListener(
-    "click",
-    toggleTheme
-);
+if (
+    themeToggle
+) {
+
+    themeToggle.addEventListener(
+        "click",
+        toggleTheme
+    );
+
+}
 
 
-addButton.addEventListener(
-    "click",
-    addLink
-);
+if (
+    addButton
+) {
+
+    addButton.addEventListener(
+        "click",
+        addLink
+    );
+
+}
 
 
-urlInput.addEventListener(
+if (
+    urlInput
+) {
+
+    urlInput.addEventListener(
+        "keydown",
+        function(event) {
+
+            if (
+                event.key ===
+                "Enter"
+            ) {
+
+                event.preventDefault();
+
+                addLink();
+
+            }
+
+        }
+    );
+
+}
+
+
+if (
+    searchInput
+) {
+
+    searchInput.addEventListener(
+        "input",
+        render
+    );
+
+}
+
+
+if (
+    filterStatus
+) {
+
+    filterStatus.addEventListener(
+        "change",
+        render
+    );
+
+}
+
+
+if (
+    checkAllButton
+) {
+
+    checkAllButton.addEventListener(
+        "click",
+        checkAllLinks
+    );
+
+}
+
+
+if (
+    linkTable
+) {
+
+    linkTable.addEventListener(
+        "click",
+        async function(event) {
+
+            const checkButton =
+                event.target.closest(
+                    "[data-check-id]"
+                );
+
+
+            if (
+                checkButton
+            ) {
+
+                const id =
+                    checkButton.getAttribute(
+                        "data-check-id"
+                    );
+
+
+                await checkUrl(
+                    id
+                );
+
+                return;
+
+            }
+
+
+            const deleteButton =
+                event.target.closest(
+                    "[data-delete-id]"
+                );
+
+
+            if (
+                deleteButton
+            ) {
+
+                const id =
+                    deleteButton.getAttribute(
+                        "data-delete-id"
+                    );
+
+
+                await deleteLink(
+                    id
+                );
+
+            }
+
+        }
+    );
+
+}
+
+
+if (
+    modalClose
+) {
+
+    modalClose.addEventListener(
+        "click",
+        closeCheckModal
+    );
+
+}
+
+
+if (
+    modalDone
+) {
+
+    modalDone.addEventListener(
+        "click",
+        closeCheckModal
+    );
+
+}
+
+
+if (
+    checkModal
+) {
+
+    checkModal.addEventListener(
+        "click",
+        function(event) {
+
+            if (
+                event.target ===
+                checkModal &&
+                !activeCheck
+            ) {
+
+                closeCheckModal();
+
+            }
+
+        }
+    );
+
+}
+
+
+document.addEventListener(
     "keydown",
     function(event) {
 
         if (
             event.key ===
-            "Enter"
+            "Escape" &&
+            !activeCheck
         ) {
 
-            event.preventDefault();
+            if (
+                checkModal &&
+                checkModal.classList.contains(
+                    "show"
+                )
+            ) {
 
-            addLink();
+                closeCheckModal();
+
+            }
 
         }
 
     }
-);
-
-
-searchInput.addEventListener(
-    "input",
-    render
-);
-
-
-filterStatus.addEventListener(
-    "change",
-    render
 );
 
 
@@ -1321,10 +2073,6 @@ loadTheme();
 
     await loadLinks();
 
-    /*
-     * Saat halaman dibuka/refresh,
-     * checker dijalankan di background.
-     */
     triggerSyncInBackground();
 
 })();
