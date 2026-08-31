@@ -1,976 +1,374 @@
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-:root {
-    --background: #f4f6fa;
-    --surface: #ffffff;
-    --surface-soft: #fafbfc;
+    <title>Nawala Monitor</title>
 
-    --text: #172033;
-    --text-secondary: #657089;
-    --muted: #8993a6;
+    <link rel="stylesheet" href="style.css">
+</head>
 
-    --border: #e4e8ef;
+<body>
 
-    --primary: #315efb;
-    --primary-hover: #244bd3;
+<div class="container">
 
-    --green: #16a36a;
-    --green-bg: #e8f8f1;
+    <header class="header">
 
-    --red: #e04444;
-    --red-bg: #fff0f0;
+        <div class="brand">
+            <div class="brand-icon">N</div>
 
-    --yellow: #d99000;
-    --yellow-bg: #fff7df;
+            <div>
+                <h1>Nawala Monitor</h1>
+                <p>Monitoring Status Link</p>
+            </div>
+        </div>
 
-    --blue-bg: #edf2ff;
+        <div class="header-right">
 
-    --shadow:
-        0 2px 8px rgba(25, 35, 55, 0.04);
-}
+            <button
+                class="theme-toggle"
+                id="themeToggle"
+                title="Ganti tema"
+            >
+                <span id="themeIcon">☀</span>
+                <span class="toggle-circle"></span>
+                <span>☾</span>
+            </button>
 
+            <div class="system">
+                <span class="online-dot"></span>
+                System Online
+            </div>
 
-/* DARK MODE */
+            <div class="update-info">
+                <span>Update terakhir</span>
+                <strong id="lastUpdate">-</strong>
+            </div>
 
-body.dark {
-    --background: #0f141d;
-    --surface: #171d28;
-    --surface-soft: #1b222e;
+        </div>
 
-    --text: #f1f4f9;
-    --text-secondary: #aeb7c7;
-    --muted: #7f8a9e;
+    </header>
 
-    --border: #293241;
+    <main>
 
-    --blue-bg: #1b2a52;
-    --green-bg: #123a2c;
-    --red-bg: #401f22;
-    --yellow-bg: #3c3017;
+        <section class="dashboard">
 
-    --shadow:
-        0 2px 10px rgba(0, 0, 0, 0.18);
-}
+            <div class="section-heading">
 
+                <div>
+                    <div class="heading-title">
+                        <span class="heading-icon">▦</span>
+                        <h2>Dashboard</h2>
+                    </div>
 
-body {
-    font-family:
-        Inter,
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        Arial,
-        sans-serif;
+                    <p>
+                        Ringkasan status seluruh link yang sedang dipantau.
+                    </p>
+                </div>
 
-    background: var(--background);
-    color: var(--text);
+            </div>
 
-    min-height: 100vh;
+            <div class="stats">
 
-    transition:
-        background 0.25s,
-        color 0.25s;
-}
+                <div class="stat-card">
 
+                    <div class="stat-icon blue">
+                        🔗
+                    </div>
 
-.container {
-    width: min(1500px, 100%);
+                    <div class="stat-content">
+                        <span>Total Link</span>
+                        <strong id="totalLinks">0</strong>
+                        <small>Link dalam monitoring</small>
+                    </div>
 
-    margin: auto;
+                </div>
 
-    padding: 20px 28px;
-}
+                <div class="stat-card">
 
+                    <div class="stat-icon green">
+                        ✓
+                    </div>
 
-/* HEADER */
+                    <div class="stat-content">
+                        <span>Normal</span>
+                        <strong id="normalLinks">0</strong>
+                        <small>Link dengan status normal</small>
+                    </div>
 
-.header {
-    background: var(--surface);
+                </div>
 
-    border: 1px solid var(--border);
+                <div class="stat-card">
 
-    border-radius: 14px;
+                    <div class="stat-icon red">
+                        !
+                    </div>
 
-    min-height: 76px;
+                    <div class="stat-content">
+                        <span>Nawala</span>
+                        <strong id="blockedLinks">0</strong>
+                        <small>Link terdeteksi Nawala</small>
+                    </div>
 
-    padding: 15px 20px;
+                </div>
 
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+                <div class="stat-card">
 
-    box-shadow: var(--shadow);
+                    <div class="stat-icon yellow">
+                        ◷
+                    </div>
 
-    margin-bottom: 24px;
-}
+                    <div class="stat-content">
+                        <span>Belum Dicek</span>
+                        <strong id="uncheckedLinks">0</strong>
+                        <small>Menunggu pengecekan</small>
+                    </div>
 
+                </div>
 
-.brand {
-    display: flex;
-    align-items: center;
+            </div>
 
-    gap: 12px;
-}
+        </section>
 
+        <section class="panel">
 
-.brand-icon {
-    width: 45px;
-    height: 45px;
+            <div class="section-heading">
 
-    border-radius: 12px;
+                <div>
+                    <div class="heading-title">
+                        <span class="heading-icon">🔗</span>
+                        <h2>Tambah Link</h2>
+                    </div>
 
-    background: var(--primary);
+                    <p>
+                        Masukkan link yang ingin kamu pantau.
+                    </p>
+                </div>
 
-    color: white;
+            </div>
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+            <div class="add-box">
 
-    font-size: 21px;
-    font-weight: 800;
+                <div class="url-input">
 
-    box-shadow:
-        0 5px 14px
-        rgba(49, 94, 251, 0.25);
-}
+                    <span>🔗</span>
 
+                    <input
+                        type="text"
+                        id="urlInput"
+                        placeholder="Masukkan URL, contoh: https://example.com"
+                        autocomplete="off"
+                    >
 
-.brand h1 {
-    font-size: 18px;
+                </div>
 
-    line-height: 1.2;
+                <button
+                    class="btn-primary"
+                    id="addButton"
+                >
+                    + Tambah Link
+                </button>
 
-    margin-bottom: 3px;
-}
+            </div>
 
+            <div id="message"></div>
 
-.brand p {
-    font-size: 11px;
+        </section>
 
-    color: var(--muted);
-}
+        <section class="panel monitoring-panel">
 
+            <div class="monitoring-heading">
 
-.header-right {
-    display: flex;
-    align-items: center;
+                <div>
 
-    gap: 14px;
-}
+                    <div class="heading-title">
+                        <span class="heading-icon">◉</span>
+                        <h2>Monitoring Link</h2>
+                    </div>
 
+                    <p>
+                        Daftar seluruh link yang sedang dipantau.
+                    </p>
 
-/* THEME */
+                </div>
 
-.theme-toggle {
-    height: 34px;
+                <div class="monitoring-actions">
 
-    border: 1px solid var(--border);
+                    <button
+                        class="btn-check-all"
+                        id="checkAllButton"
+                        type="button"
+                    >
+                        ↻ Cek Semua Link
+                    </button>
 
-    background: var(--surface-soft);
+                    <div class="search">
 
-    border-radius: 20px;
+                        <span>⌕</span>
 
-    padding: 3px 7px;
+                        <input
+                            type="text"
+                            id="searchInput"
+                            placeholder="Cari link..."
+                        >
 
-    display: flex;
-    align-items: center;
+                    </div>
 
-    gap: 5px;
+                    <select id="filterStatus">
 
-    color: var(--muted);
+                        <option value="all">
+                            Semua Status
+                        </option>
 
-    cursor: pointer;
+                        <option value="normal">
+                            Normal
+                        </option>
 
-    font-size: 12px;
-}
+                        <option value="nawala">
+                            Nawala
+                        </option>
 
+                        <option value="unchecked">
+                            Belum Dicek
+                        </option>
 
-.toggle-circle {
-    width: 27px;
-    height: 27px;
+                    </select>
 
-    border-radius: 50%;
+                </div>
 
-    background: var(--primary);
+            </div>
 
-    display: block;
+            <div class="table-container">
 
-    position: relative;
-}
+                <table>
 
+                    <thead>
 
-.toggle-circle::after {
-    content: "";
+                        <tr>
+                            <th>LINK</th>
+                            <th>STATUS</th>
+                            <th>TERAKHIR DICEK</th>
+                            <th>AKSI</th>
+                        </tr>
 
-    width: 10px;
-    height: 10px;
+                    </thead>
 
-    background: white;
+                    <tbody id="linkTable"></tbody>
 
-    border-radius: 50%;
+                </table>
 
-    position: absolute;
+                <div
+                    id="emptyState"
+                    class="empty-state"
+                >
 
-    top: 50%;
-    left: 50%;
+                    <div class="empty-icon">
+                        🔗
+                    </div>
 
-    transform: translate(-50%, -50%);
-}
+                    <h3>Belum ada link</h3>
 
+                    <p>
+                        Tambahkan link di atas untuk mulai monitoring.
+                    </p>
 
-/* SYSTEM */
+                </div>
 
-.system {
-    display: flex;
-    align-items: center;
+            </div>
 
-    gap: 7px;
+        </section>
 
-    padding: 8px 12px;
+    </main>
 
-    border-radius: 20px;
+    <footer>
+        <span>© 2026 Nawala Monitor</span>
+        <span>Monitoring System</span>
+    </footer>
 
-    background: var(--green-bg);
+</div>
 
-    color: var(--green);
 
-    font-size: 11px;
+<div
+    class="modal-overlay"
+    id="checkModal"
+    aria-hidden="true"
+>
 
-    font-weight: 700;
-}
+    <div
+        class="check-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modalTitle"
+    >
 
+        <button
+            class="modal-close"
+            id="modalClose"
+            type="button"
+            aria-label="Tutup"
+        >
+            ×
+        </button>
 
-.online-dot {
-    width: 7px;
-    height: 7px;
+        <div
+            class="modal-loader"
+            id="modalLoader"
+        >
+            <div class="spinner"></div>
+        </div>
 
-    border-radius: 50%;
+        <div
+            class="modal-success-icon"
+            id="modalSuccessIcon"
+        >
+            ✓
+        </div>
 
-    background: currentColor;
-}
+        <h3 id="modalTitle">
+            Pengecekan Link
+        </h3>
 
+        <p id="modalText">
+            Memulai pengecekan...
+        </p>
 
-.update-info {
-    padding-left: 14px;
+        <div
+            class="modal-progress"
+            id="modalProgress"
+        >
+            <span></span>
+        </div>
 
-    border-left: 1px solid var(--border);
+        <div
+            class="modal-summary"
+            id="modalSummary"
+        >
+            <div>
+                <span>Normal</span>
+                <strong id="modalNormal">0</strong>
+            </div>
 
-    display: flex;
-    flex-direction: column;
+            <div>
+                <span>Nawala</span>
+                <strong id="modalNawala">0</strong>
+            </div>
+        </div>
 
-    gap: 2px;
+        <button
+            class="modal-done"
+            id="modalDone"
+            type="button"
+        >
+            Tutup
+        </button>
 
-    font-size: 10px;
+    </div>
 
-    color: var(--muted);
-}
+</div>
 
 
-.update-info strong {
-    color: var(--text);
+<script src="script.js"></script>
 
-    font-size: 11px;
-}
-
-
-/* DASHBOARD */
-
-.dashboard {
-    margin-bottom: 22px;
-}
-
-
-.section-heading {
-    margin-bottom: 17px;
-}
-
-
-.heading-title {
-    display: flex;
-    align-items: center;
-
-    gap: 9px;
-}
-
-
-.heading-title h2 {
-    font-size: 17px;
-
-    line-height: 1.2;
-}
-
-
-.heading-icon {
-    color: var(--primary);
-
-    font-size: 17px;
-}
-
-
-.section-heading p {
-    color: var(--text-secondary);
-
-    font-size: 11px;
-
-    margin-top: 6px;
-}
-
-
-/* STATISTICS */
-
-.stats {
-    display: grid;
-
-    grid-template-columns:
-        repeat(4, 1fr);
-
-    gap: 14px;
-}
-
-
-.stat-card {
-    background: var(--surface);
-
-    border: 1px solid var(--border);
-
-    border-radius: 13px;
-
-    padding: 18px;
-
-    display: flex;
-    align-items: center;
-
-    gap: 14px;
-
-    box-shadow: var(--shadow);
-
-    min-height: 120px;
-}
-
-
-.stat-icon {
-    width: 44px;
-    height: 44px;
-
-    flex-shrink: 0;
-
-    border-radius: 50%;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    font-size: 18px;
-    font-weight: 800;
-}
-
-
-.stat-icon.blue {
-    color: var(--primary);
-    background: var(--blue-bg);
-}
-
-
-.stat-icon.green {
-    color: var(--green);
-    background: var(--green-bg);
-}
-
-
-.stat-icon.red {
-    color: var(--red);
-    background: var(--red-bg);
-}
-
-
-.stat-icon.yellow {
-    color: var(--yellow);
-    background: var(--yellow-bg);
-}
-
-
-.stat-content {
-    min-width: 0;
-}
-
-
-.stat-content span {
-    display: block;
-
-    color: var(--text-secondary);
-
-    font-size: 11px;
-
-    margin-bottom: 4px;
-}
-
-
-.stat-content strong {
-    display: block;
-
-    font-size: 26px;
-
-    line-height: 1;
-
-    margin-bottom: 5px;
-}
-
-
-.stat-content small {
-    color: var(--muted);
-
-    font-size: 9px;
-}
-
-
-/* PANEL */
-
-.panel {
-    background: var(--surface);
-
-    border: 1px solid var(--border);
-
-    border-radius: 14px;
-
-    padding: 21px;
-
-    margin-bottom: 22px;
-
-    box-shadow: var(--shadow);
-}
-
-
-/* ADD LINK */
-
-.add-box {
-    display: flex;
-
-    gap: 10px;
-}
-
-
-.url-input {
-    flex: 1;
-
-    height: 42px;
-
-    border: 1px solid var(--border);
-
-    border-radius: 8px;
-
-    display: flex;
-    align-items: center;
-
-    gap: 9px;
-
-    padding: 0 13px;
-
-    background: var(--surface-soft);
-
-    transition: 0.2s;
-}
-
-
-.url-input:focus-within {
-    border-color: var(--primary);
-
-    box-shadow:
-        0 0 0 3px
-        rgba(49, 94, 251, 0.08);
-}
-
-
-.url-input span {
-    font-size: 13px;
-
-    color: var(--muted);
-}
-
-
-.url-input input {
-    width: 100%;
-
-    border: none;
-    outline: none;
-
-    background: transparent;
-
-    color: var(--text);
-
-    font-size: 12px;
-}
-
-
-.url-input input::placeholder {
-    color: var(--muted);
-}
-
-
-.btn-primary {
-    height: 42px;
-
-    padding: 0 22px;
-
-    border: none;
-
-    border-radius: 8px;
-
-    background: var(--primary);
-
-    color: white;
-
-    font-size: 11px;
-
-    font-weight: 700;
-
-    cursor: pointer;
-
-    transition: 0.2s;
-}
-
-
-.btn-primary:hover {
-    background: var(--primary-hover);
-
-    transform: translateY(-1px);
-}
-
-
-#message {
-    font-size: 11px;
-
-    margin-top: 9px;
-}
-
-
-.message-success {
-    color: var(--green);
-}
-
-
-.message-error {
-    color: var(--red);
-}
-
-
-/* MONITORING */
-
-.monitoring-panel {
-    padding: 0;
-}
-
-
-.monitoring-heading {
-    padding: 21px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 20px;
-
-    border-bottom: 1px solid var(--border);
-}
-
-
-.monitoring-actions {
-    display: flex;
-
-    gap: 8px;
-}
-
-
-/* SEARCH */
-
-.search {
-    width: 210px;
-
-    height: 36px;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 7px;
-
-    border: 1px solid var(--border);
-
-    background: var(--surface-soft);
-
-    border-radius: 8px;
-
-    padding: 0 10px;
-}
-
-
-.search span {
-    color: var(--muted);
-
-    font-size: 15px;
-}
-
-
-.search input {
-    width: 100%;
-
-    border: none;
-
-    outline: none;
-
-    background: transparent;
-
-    color: var(--text);
-
-    font-size: 11px;
-}
-
-
-.search input::placeholder {
-    color: var(--muted);
-}
-
-
-/* FILTER */
-
-select {
-    height: 36px;
-
-    min-width: 125px;
-
-    padding: 0 10px;
-
-    border: 1px solid var(--border);
-
-    border-radius: 8px;
-
-    background: var(--surface-soft);
-
-    color: var(--text-secondary);
-
-    font-size: 11px;
-
-    outline: none;
-
-    cursor: pointer;
-}
-
-
-/* TABLE */
-
-.table-container {
-    overflow-x: auto;
-}
-
-
-table {
-    width: 100%;
-
-    border-collapse: collapse;
-
-    min-width: 750px;
-}
-
-
-thead {
-    background: var(--surface-soft);
-}
-
-
-th {
-    text-align: left;
-
-    padding: 11px 21px;
-
-    color: var(--muted);
-
-    font-size: 9px;
-
-    font-weight: 700;
-
-    letter-spacing: 0.5px;
-}
-
-
-td {
-    padding: 13px 21px;
-
-    border-top: 1px solid var(--border);
-
-    font-size: 11px;
-}
-
-
-.url-cell {
-    color: var(--primary);
-
-    font-weight: 600;
-
-    max-width: 450px;
-
-    word-break: break-all;
-}
-
-
-.time-cell {
-    color: var(--text-secondary);
-
-    font-size: 10px;
-}
-
-
-/* STATUS */
-
-.status {
-    display: inline-flex;
-
-    align-items: center;
-
-    gap: 6px;
-
-    padding: 5px 9px;
-
-    border-radius: 20px;
-
-    font-size: 9px;
-
-    font-weight: 700;
-}
-
-
-.status-dot {
-    width: 6px;
-    height: 6px;
-
-    border-radius: 50%;
-
-    background: currentColor;
-}
-
-
-.status-normal {
-    color: var(--green);
-
-    background: var(--green-bg);
-}
-
-
-.status-nawala {
-    color: var(--red);
-
-    background: var(--red-bg);
-}
-
-
-.status-unchecked {
-    color: var(--yellow);
-
-    background: var(--yellow-bg);
-}
-
-
-/* BUTTON */
-
-.action-group {
-    display: flex;
-
-    gap: 6px;
-}
-
-
-.btn-action {
-    height: 28px;
-
-    padding: 0 10px;
-
-    border-radius: 7px;
-
-    border: 1px solid var(--border);
-
-    background: var(--surface);
-
-    color: var(--text-secondary);
-
-    font-size: 10px;
-
-    cursor: pointer;
-
-    transition: 0.2s;
-}
-
-
-.btn-check:hover {
-    color: var(--primary);
-
-    background: var(--blue-bg);
-
-    border-color: transparent;
-}
-
-
-.btn-delete:hover {
-    color: var(--red);
-
-    background: var(--red-bg);
-
-    border-color: transparent;
-}
-
-
-/* EMPTY */
-
-.empty-state {
-    text-align: center;
-
-    padding: 55px 20px;
-}
-
-
-.empty-icon {
-    font-size: 30px;
-
-    opacity: 0.5;
-
-    margin-bottom: 10px;
-}
-
-
-.empty-state h3 {
-    font-size: 13px;
-
-    margin-bottom: 5px;
-}
-
-
-.empty-state p {
-    color: var(--muted);
-
-    font-size: 10px;
-}
-
-
-/* FOOTER */
-
-footer {
-    display: flex;
-
-    justify-content: space-between;
-
-    color: var(--muted);
-
-    font-size: 9px;
-
-    padding: 3px 2px 15px;
-}
-
-
-/* RESPONSIVE */
-
-@media (max-width: 1000px) {
-
-    .stats {
-        grid-template-columns:
-            repeat(2, 1fr);
-    }
-
-}
-
-
-@media (max-width: 750px) {
-
-    .container {
-        padding: 14px;
-    }
-
-
-    .header {
-        align-items: flex-start;
-
-        gap: 15px;
-    }
-
-
-    .header-right {
-        flex-wrap: wrap;
-
-        justify-content: flex-end;
-    }
-
-
-    .update-info {
-        display: none;
-    }
-
-
-    .monitoring-heading {
-        align-items: flex-start;
-
-        flex-direction: column;
-    }
-
-
-    .monitoring-actions {
-        width: 100%;
-    }
-
-
-    .search {
-        flex: 1;
-    }
-
-}
-
-
-@media (max-width: 550px) {
-
-    .header {
-        display: block;
-    }
-
-
-    .header-right {
-        justify-content: flex-start;
-
-        margin-top: 15px;
-    }
-
-
-    .stats {
-        grid-template-columns: 1fr;
-    }
-
-
-    .add-box {
-        flex-direction: column;
-    }
-
-
-    .btn-primary {
-        width: 100%;
-    }
-
-
-    .monitoring-actions {
-        flex-direction: column;
-    }
-
-
-    .search,
-    select {
-        width: 100%;
-    }
-
-
-    footer {
-        flex-direction: column;
-
-        gap: 5px;
-    }
-
-}
+</body>
+</html>
