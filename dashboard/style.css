@@ -1,374 +1,378 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+.btn-check-all {
+    height: 36px;
+    padding: 0 13px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+        background 0.2s,
+        color 0.2s,
+        border-color 0.2s,
+        transform 0.2s;
+    white-space: nowrap;
+}
 
-    <title>Nawala Monitor</title>
+.btn-check-all:hover {
+    color: var(--primary);
+    background: var(--blue-bg);
+    border-color: transparent;
+    transform: translateY(-1px);
+}
 
-    <link rel="stylesheet" href="style.css">
-</head>
+.btn-check-all:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+}
 
-<body>
 
-<div class="container">
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
 
-    <header class="header">
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-        <div class="brand">
-            <div class="brand-icon">N</div>
+    padding: 20px;
 
-            <div>
-                <h1>Nawala Monitor</h1>
-                <p>Monitoring Status Link</p>
-            </div>
-        </div>
+    background: rgba(10, 18, 32, 0.35);
 
-        <div class="header-right">
+    opacity: 0;
+    visibility: hidden;
 
-            <button
-                class="theme-toggle"
-                id="themeToggle"
-                title="Ganti tema"
-            >
-                <span id="themeIcon">☀</span>
-                <span class="toggle-circle"></span>
-                <span>☾</span>
-            </button>
+    transition:
+        opacity 0.2s ease,
+        visibility 0.2s ease;
 
-            <div class="system">
-                <span class="online-dot"></span>
-                System Online
-            </div>
+    backdrop-filter: blur(4px);
+}
 
-            <div class="update-info">
-                <span>Update terakhir</span>
-                <strong id="lastUpdate">-</strong>
-            </div>
+.modal-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
 
-        </div>
+.check-modal {
+    position: relative;
 
-    </header>
+    width: min(400px, 100%);
 
-    <main>
+    padding: 30px 28px 25px;
 
-        <section class="dashboard">
+    border:
+        1px solid var(--border);
 
-            <div class="section-heading">
+    border-radius: 16px;
 
-                <div>
-                    <div class="heading-title">
-                        <span class="heading-icon">▦</span>
-                        <h2>Dashboard</h2>
-                    </div>
+    background:
+        var(--surface);
 
-                    <p>
-                        Ringkasan status seluruh link yang sedang dipantau.
-                    </p>
-                </div>
+    box-shadow:
+        0 18px 50px
+        rgba(25, 35, 55, 0.16);
 
-            </div>
+    text-align: center;
 
-            <div class="stats">
+    transform:
+        translateY(12px)
+        scale(0.96);
 
-                <div class="stat-card">
+    transition:
+        transform 0.25s ease;
+}
 
-                    <div class="stat-icon blue">
-                        🔗
-                    </div>
+.modal-overlay.show .check-modal {
+    transform:
+        translateY(0)
+        scale(1);
+}
 
-                    <div class="stat-content">
-                        <span>Total Link</span>
-                        <strong id="totalLinks">0</strong>
-                        <small>Link dalam monitoring</small>
-                    </div>
+.modal-close {
+    position: absolute;
 
-                </div>
+    top: 10px;
+    right: 12px;
 
-                <div class="stat-card">
+    width: 28px;
+    height: 28px;
 
-                    <div class="stat-icon green">
-                        ✓
-                    </div>
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-                    <div class="stat-content">
-                        <span>Normal</span>
-                        <strong id="normalLinks">0</strong>
-                        <small>Link dengan status normal</small>
-                    </div>
+    border: none;
+    border-radius: 50%;
 
-                </div>
+    background: transparent;
 
-                <div class="stat-card">
+    color: var(--muted);
 
-                    <div class="stat-icon red">
-                        !
-                    </div>
+    font-size: 20px;
 
-                    <div class="stat-content">
-                        <span>Nawala</span>
-                        <strong id="blockedLinks">0</strong>
-                        <small>Link terdeteksi Nawala</small>
-                    </div>
+    cursor: pointer;
 
-                </div>
+    transition:
+        background 0.2s,
+        color 0.2s;
+}
 
-                <div class="stat-card">
+.modal-close:hover {
+    background:
+        var(--surface-soft);
 
-                    <div class="stat-icon yellow">
-                        ◷
-                    </div>
+    color:
+        var(--text);
+}
 
-                    <div class="stat-content">
-                        <span>Belum Dicek</span>
-                        <strong id="uncheckedLinks">0</strong>
-                        <small>Menunggu pengecekan</small>
-                    </div>
+.modal-loader {
+    display: flex;
 
-                </div>
+    align-items: center;
+    justify-content: center;
 
-            </div>
+    margin-bottom: 16px;
+}
 
-        </section>
+.spinner {
+    width: 44px;
+    height: 44px;
 
-        <section class="panel">
+    border:
+        3px solid var(--blue-bg);
 
-            <div class="section-heading">
+    border-top-color:
+        var(--primary);
 
-                <div>
-                    <div class="heading-title">
-                        <span class="heading-icon">🔗</span>
-                        <h2>Tambah Link</h2>
-                    </div>
+    border-radius: 50%;
 
-                    <p>
-                        Masukkan link yang ingin kamu pantau.
-                    </p>
-                </div>
+    animation:
+        modalSpin 0.8s linear infinite;
+}
 
-            </div>
+@keyframes modalSpin {
+    to {
+        transform:
+            rotate(360deg);
+    }
+}
 
-            <div class="add-box">
+.modal-success-icon {
+    display: none;
 
-                <div class="url-input">
+    width: 44px;
+    height: 44px;
 
-                    <span>🔗</span>
+    margin:
+        0 auto 16px;
 
-                    <input
-                        type="text"
-                        id="urlInput"
-                        placeholder="Masukkan URL, contoh: https://example.com"
-                        autocomplete="off"
-                    >
+    border-radius: 50%;
 
-                </div>
+    align-items: center;
+    justify-content: center;
 
-                <button
-                    class="btn-primary"
-                    id="addButton"
-                >
-                    + Tambah Link
-                </button>
+    background:
+        var(--green-bg);
 
-            </div>
+    color:
+        var(--green);
 
-            <div id="message"></div>
+    font-size: 22px;
+    font-weight: 800;
 
-        </section>
+    animation:
+        modalSuccess 0.35s ease;
+}
 
-        <section class="panel monitoring-panel">
+.modal-success-icon.show {
+    display: flex;
+}
 
-            <div class="monitoring-heading">
+@keyframes modalSuccess {
+    from {
+        opacity: 0;
+        transform: scale(0.7);
+    }
 
-                <div>
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
 
-                    <div class="heading-title">
-                        <span class="heading-icon">◉</span>
-                        <h2>Monitoring Link</h2>
-                    </div>
+.check-modal h3 {
+    margin-bottom: 7px;
 
-                    <p>
-                        Daftar seluruh link yang sedang dipantau.
-                    </p>
+    font-size: 16px;
+}
 
-                </div>
+.check-modal > p {
+    margin: 0 auto;
 
-                <div class="monitoring-actions">
+    max-width: 300px;
 
-                    <button
-                        class="btn-check-all"
-                        id="checkAllButton"
-                        type="button"
-                    >
-                        ↻ Cek Semua Link
-                    </button>
+    color:
+        var(--text-secondary);
 
-                    <div class="search">
+    font-size: 11px;
 
-                        <span>⌕</span>
+    line-height: 1.6;
+}
 
-                        <input
-                            type="text"
-                            id="searchInput"
-                            placeholder="Cari link..."
-                        >
+.modal-progress {
+    width: 100%;
+    height: 5px;
 
-                    </div>
+    margin:
+        18px 0 4px;
 
-                    <select id="filterStatus">
+    overflow: hidden;
 
-                        <option value="all">
-                            Semua Status
-                        </option>
+    border-radius: 10px;
 
-                        <option value="normal">
-                            Normal
-                        </option>
+    background:
+        var(--surface-soft);
+}
 
-                        <option value="nawala">
-                            Nawala
-                        </option>
+.modal-progress span {
+    display: block;
 
-                        <option value="unchecked">
-                            Belum Dicek
-                        </option>
+    width: 35%;
+    height: 100%;
 
-                    </select>
+    border-radius: inherit;
 
-                </div>
+    background:
+        var(--primary);
 
-            </div>
+    animation:
+        modalProgress 1.4s ease-in-out infinite;
+}
 
-            <div class="table-container">
+@keyframes modalProgress {
+    0% {
+        transform: translateX(-140%);
+    }
 
-                <table>
+    50% {
+        transform: translateX(160%);
+    }
 
-                    <thead>
+    100% {
+        transform: translateX(340%);
+    }
+}
 
-                        <tr>
-                            <th>LINK</th>
-                            <th>STATUS</th>
-                            <th>TERAKHIR DICEK</th>
-                            <th>AKSI</th>
-                        </tr>
+.modal-summary {
+    display: none;
 
-                    </thead>
+    grid-template-columns:
+        repeat(2, 1fr);
 
-                    <tbody id="linkTable"></tbody>
+    gap: 10px;
 
-                </table>
+    margin-top: 18px;
+}
 
-                <div
-                    id="emptyState"
-                    class="empty-state"
-                >
+.modal-summary.show {
+    display: grid;
+}
 
-                    <div class="empty-icon">
-                        🔗
-                    </div>
+.modal-summary > div {
+    padding: 11px;
 
-                    <h3>Belum ada link</h3>
+    border:
+        1px solid var(--border);
 
-                    <p>
-                        Tambahkan link di atas untuk mulai monitoring.
-                    </p>
+    border-radius: 10px;
 
-                </div>
+    background:
+        var(--surface-soft);
+}
 
-            </div>
+.modal-summary span {
+    display: block;
 
-        </section>
+    margin-bottom: 4px;
 
-    </main>
+    color:
+        var(--muted);
 
-    <footer>
-        <span>© 2026 Nawala Monitor</span>
-        <span>Monitoring System</span>
-    </footer>
+    font-size: 9px;
+}
 
-</div>
+.modal-summary strong {
+    font-size: 19px;
+}
 
+.modal-done {
+    display: none;
 
-<div
-    class="modal-overlay"
-    id="checkModal"
-    aria-hidden="true"
->
+    width: 100%;
 
-    <div
-        class="check-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="modalTitle"
-    >
+    height: 38px;
 
-        <button
-            class="modal-close"
-            id="modalClose"
-            type="button"
-            aria-label="Tutup"
-        >
-            ×
-        </button>
+    margin-top: 16px;
 
-        <div
-            class="modal-loader"
-            id="modalLoader"
-        >
-            <div class="spinner"></div>
-        </div>
+    border: none;
+    border-radius: 8px;
 
-        <div
-            class="modal-success-icon"
-            id="modalSuccessIcon"
-        >
-            ✓
-        </div>
+    background:
+        var(--primary);
 
-        <h3 id="modalTitle">
-            Pengecekan Link
-        </h3>
+    color: white;
 
-        <p id="modalText">
-            Memulai pengecekan...
-        </p>
+    font-size: 11px;
+    font-weight: 700;
 
-        <div
-            class="modal-progress"
-            id="modalProgress"
-        >
-            <span></span>
-        </div>
+    cursor: pointer;
 
-        <div
-            class="modal-summary"
-            id="modalSummary"
-        >
-            <div>
-                <span>Normal</span>
-                <strong id="modalNormal">0</strong>
-            </div>
+    transition:
+        background 0.2s;
+}
 
-            <div>
-                <span>Nawala</span>
-                <strong id="modalNawala">0</strong>
-            </div>
-        </div>
+.modal-done.show {
+    display: block;
+}
 
-        <button
-            class="modal-done"
-            id="modalDone"
-            type="button"
-        >
-            Tutup
-        </button>
+.modal-done:hover {
+    background:
+        var(--primary-hover);
+}
 
-    </div>
+body.modal-open {
+    overflow: hidden;
+}
 
-</div>
 
+@media (max-width: 750px) {
 
-<script src="script.js"></script>
+    .monitoring-actions {
+        flex-wrap: wrap;
+    }
 
-</body>
-</html>
+    .btn-check-all {
+        flex: 1;
+        min-width: 145px;
+    }
+
+}
+
+
+@media (max-width: 550px) {
+
+    .btn-check-all {
+        width: 100%;
+    }
+
+    .check-modal {
+        padding:
+            28px 20px 21px;
+    }
+
+}
