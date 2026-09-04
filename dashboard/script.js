@@ -602,7 +602,7 @@ async function testNawala() {
                 false
             );
         }
-    } catch (error) {
+       } catch (error) {
         if (!sessionRedirecting) {
             await showCustomModal(
                 "error",
@@ -618,6 +618,167 @@ async function testNawala() {
         testNawalaButton.disabled = false;
     }
 }
+
+async function runFullCheck() {
+    if (activeCheck) {
+        return;
+    }
+
+    activeCheck = true;
+    checkStartedAt = Date.now();
+
+    render();
+    setCheckingControls(true);
+    showCheckModal();
+
+    try {
+        modalTitle.textContent =
+            "Pengecekan Link";
+
+        modalText.textContent =
+            "Memulai pengecekan semua link...";
+
+        const syncResult =
+            await triggerSync();
+
+        if (
+            !syncResult ||
+            !syncResult.success
+        ) {
+            throw new Error(
+                syncResult &&
+                syncResult.message
+                    ? syncResult.message
+                    : "Gagal memulai checker."
+            );
+        }
+
+        modalText.textContent =
+            "Semua link sedang diperiksa. Mohon tunggu...";
+
+        const completed =
+            await waitForCheckComplete();
+
+        if (!completed) {
+            throw new Error(
+                "Pengecekan membutuhkan waktu lebih lama dari perkiraan."
+            );
+        }
+
+        const loaded =
+            await loadLinks(true);
+
+        if (!loaded) {
+            throw new Error(
+                "Status terbaru gagal diambil."
+            );
+        }
+
+        finishCheckModal();
+
+        showMessage(
+            "Semua link selesai diperiksa.",
+            "success"
+        );
+
+    } catch (error) {
+        console.error(
+            "FULL CHECK ERROR:",
+            error
+        );
+
+        if (!sessionRedirecting) {
+            await loadLinks(true);
+
+            showCheckModalError(
+                error.message ||
+                "Gagal menjalankan pengecekan."
+            );
+        }
+
+    } finally {
+        activeCheck = false;
+
+        setCheckingControls(false);
+
+        render();
+    }
+}
+
+async function waitForCheckComplete() {
+    const started =
+        Date.now();
+
+    while (
+        Date.now() -
+        started <
+        CHECK_MAX_WAIT_MS
+    ) {
+        await sleep(
+            CHECK_POLL_INTERVAL_MS
+        );
+
+        const result =
+            await getLatestLinks();
+
+        if (
+            !result ||
+            !result.success
+        ) {
+            continue;
+        }
+
+        const data =
+            Array.isArray(
+                result.data
+            )
+                ? result.data
+                : [];
+
+        if (
+            data.length === 0
+        ) {
+            return true;
+        }
+
+        const allChecked =
+            data.every(
+                function(item) {
+                    if (
+                        !item.lastChecked
+                    ) {
+                        return false;
+                    }
+
+                    const checkedTime =
+                        new Date(
+                            item.lastChecked
+                        ).getTime();
+
+                    return (
+                        checkedTime >=
+                        checkStartedAt - 10000
+                    );
+                }
+            );
+
+        if (
+            allChecked
+        ) {
+            links =
+                data;
+
+            render();
+
+            updateLastUpdate();
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
 function triggerSync() {
     return apiRequest({
         action: "sync"
@@ -630,6 +791,8 @@ function triggerSync() {
                 message: error.message
             };
         }
+    );
+}
     );
 }
 
