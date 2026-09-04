@@ -25,6 +25,8 @@ const message = document.getElementById("message");
 const themeToggle = document.getElementById("themeToggle");
 const themeIcon = document.getElementById("themeIcon");
 const checkAllButton = document.getElementById("checkAllButton");
+const testTelegramButton = document.getElementById("testTelegramButton");
+const testNawalaButton = document.getElementById("testNawalaButton");
 const checkModal = document.getElementById("checkModal");
 const modalClose = document.getElementById("modalClose");
 const modalLoader = document.getElementById("modalLoader");
@@ -81,7 +83,6 @@ function redirectToLogin() {
     }
 
     sessionRedirecting = true;
-
     clearSession();
 
     window.location.replace(
@@ -95,7 +96,6 @@ function handleSessionExpired() {
     }
 
     sessionRedirecting = true;
-
     clearSession();
 
     showCustomModal(
@@ -157,13 +157,11 @@ function apiRequest(params) {
             const timeout =
                 setTimeout(
                     function() {
-
                         finishError(
                             new Error(
                                 "Server tidak merespons."
                             )
                         );
-
                     },
                     15000
                 );
@@ -506,207 +504,131 @@ async function checkAllLinks() {
     await runFullCheck();
 }
 
-async function runFullCheck() {
-    if (activeCheck) {
+async function testTelegram() {
+    if (!hasLocalSession()) {
+        redirectToLogin();
         return;
     }
 
-    activeCheck = true;
-    checkStartedAt = Date.now();
-
-    render();
-    setCheckingControls(true);
-    showCheckModal();
+    testTelegramButton.disabled = true;
+    testNawalaButton.disabled = true;
 
     try {
-
-        modalTitle.textContent =
-            "Pengecekan Link";
-
-        modalText.textContent =
-            "Memulai pengecekan semua link...";
-
-        const syncResult =
-            await triggerSync();
-
-        if (
-            !syncResult ||
-            !syncResult.success
-        ) {
-            throw new Error(
-                syncResult &&
-                syncResult.message
-                    ? syncResult.message
-                    : "Gagal memulai checker."
-            );
-        }
-
-        modalText.textContent =
-            "Semua link sedang diperiksa. Mohon tunggu...";
-
-        const completed =
-            await waitForCheckComplete();
-
-        if (!completed) {
-            throw new Error(
-                "Pengecekan membutuhkan waktu lebih lama dari perkiraan."
-            );
-        }
-
-        const loaded =
-            await loadLinks(
-                true
-            );
-
-        if (!loaded) {
-            throw new Error(
-                "Status terbaru gagal diambil."
-            );
-        }
-
-        finishCheckModal();
-
-        showMessage(
-            "Semua link selesai diperiksa.",
-            "success"
-        );
-
-    } catch (error) {
-
-        console.error(
-            "FULL CHECK ERROR:",
-            error
-        );
-
-        if (
-            !sessionRedirecting
-        ) {
-
-            await loadLinks(
-                true
-            );
-
-            showCheckModalError(
-                error.message ||
-                "Gagal menjalankan pengecekan."
-            );
-        }
-
-    } finally {
-
-        activeCheck = false;
-
-        setCheckingControls(false);
-
-        render();
-
-    }
-}
-
-async function waitForCheckComplete() {
-    const started =
-        Date.now();
-
-    while (
-        Date.now() -
-        started <
-        CHECK_MAX_WAIT_MS
-    ) {
-
-        await sleep(
-            CHECK_POLL_INTERVAL_MS
-        );
-
         const result =
-            await getLatestLinks();
+            await apiRequest({
+                action: "testTelegram"
+            });
 
-        if (
-            !result ||
-            !result.success
-        ) {
-            continue;
-        }
-
-        const data =
-            Array.isArray(
-                result.data
-            )
-                ? result.data
-                : [];
-
-        if (
-            data.length === 0
-        ) {
-            return true;
-        }
-
-        const allChecked =
-            data.every(
-                function(item) {
-
-                    if (
-                        !item.lastChecked
-                    ) {
-                        return false;
-                    }
-
-                    const checkedTime =
-                        new Date(
-                            item.lastChecked
-                        ).getTime();
-
-                    return (
-                        checkedTime >=
-                        checkStartedAt - 10000
-                    );
-                }
+        if (result && result.success) {
+            await showCustomModal(
+                "success",
+                "Telegram Berhasil",
+                "Pesan test Telegram berhasil dikirim.",
+                "Tutup",
+                false
             );
-
-        if (allChecked) {
-
-            links =
-                data;
-
-            render();
-            updateLastUpdate();
-
-            return true;
+        } else {
+            await showCustomModal(
+                "error",
+                "Telegram Gagal",
+                result && result.message
+                    ? result.message
+                    : "Pesan test Telegram gagal dikirim.",
+                "Tutup",
+                false
+            );
         }
+    } catch (error) {
+        if (!sessionRedirecting) {
+            await showCustomModal(
+                "error",
+                "Telegram Gagal",
+                error.message ||
+                "Tidak dapat menjalankan test Telegram.",
+                "Tutup",
+                false
+            );
+        }
+    } finally {
+        testTelegramButton.disabled = false;
+        testNawalaButton.disabled = false;
     }
-
-    return false;
 }
 
-async function getLatestLinks() {
-    try {
-        return await apiRequest({
-            action: "list"
-        });
+async function testNawala() {
+    if (!hasLocalSession()) {
+        redirectToLogin();
+        return;
+    }
 
-    } catch (error) {
-
-        console.warn(
-            "POLL ERROR:",
-            error
+    const confirmed =
+        await showCustomModal(
+            "info",
+            "Test Alert Nawala?",
+            "Sistem akan mengirim simulasi alert Nawala ke Telegram.",
+            "Kirim Test",
+            true
         );
 
-        return null;
+    if (!confirmed) {
+        return;
+    }
+
+    testTelegramButton.disabled = true;
+    testNawalaButton.disabled = true;
+
+    try {
+        const result =
+            await apiRequest({
+                action: "testNawala"
+            });
+
+        if (result && result.success) {
+            await showCustomModal(
+                "success",
+                "Alert Terkirim",
+                "Simulasi alert Nawala berhasil dikirim ke Telegram.",
+                "Tutup",
+                false
+            );
+        } else {
+            await showCustomModal(
+                "error",
+                "Alert Gagal",
+                result && result.message
+                    ? result.message
+                    : "Simulasi alert Nawala gagal dikirim.",
+                "Tutup",
+                false
+            );
+        }
+    } catch (error) {
+        if (!sessionRedirecting) {
+            await showCustomModal(
+                "error",
+                "Alert Gagal",
+                error.message ||
+                "Tidak dapat menjalankan test alert.",
+                "Tutup",
+                false
+            );
+        }
+    } finally {
+        testTelegramButton.disabled = false;
+        testNawalaButton.disabled = false;
     }
 }
-
 function triggerSync() {
     return apiRequest({
         action: "sync"
     })
     .catch(
         function(error) {
-
             return {
                 success: false,
                 status: "error",
                 message: error.message
             };
-
         }
     );
 }
@@ -1103,9 +1025,7 @@ function getDisplayStatus(
         "unchecked"
     );
 }
-
 function render() {
-
     const search =
         searchInput.value
             .toLowerCase()
@@ -1117,7 +1037,6 @@ function render() {
     let filtered =
         links.filter(
             function(item) {
-
                 return String(
                     item.url || ""
                 )
@@ -1125,7 +1044,6 @@ function render() {
                 .includes(
                     search
                 );
-
             }
         );
 
@@ -1133,16 +1051,13 @@ function render() {
         filter !==
         "all"
     ) {
-
         filtered =
             filtered.filter(
                 function(item) {
-
                     return (
                         item.status ===
                         filter
                     );
-
                 }
             );
     }
@@ -1151,14 +1066,12 @@ function render() {
         "";
 
     emptyState.style.display =
-        filtered.length ===
-        0
+        filtered.length === 0
             ? "block"
             : "none";
 
     filtered.forEach(
         function(item) {
-
             const row =
                 document.createElement(
                     "tr"
@@ -1170,7 +1083,6 @@ function render() {
                 );
 
             row.innerHTML = `
-
                 <td>
                     <div class="url-cell">
                         ${escapeHtml(item.url)}
@@ -1206,7 +1118,6 @@ function render() {
                         </button>
                     </div>
                 </td>
-
             `;
 
             linkTable.appendChild(
@@ -1219,7 +1130,6 @@ function render() {
 }
 
 function updateStatistics() {
-
     const total =
         links.length;
 
@@ -1305,7 +1215,6 @@ function updateStatistics() {
 }
 
 function updateLastUpdate() {
-
     const element =
         document.getElementById(
             "lastUpdate"
@@ -1332,7 +1241,6 @@ function showMessage(
     text,
     type
 ) {
-
     if (
         !message
     ) {
@@ -1350,13 +1258,11 @@ function showMessage(
 
     setTimeout(
         function() {
-
             message.textContent =
                 "";
 
             message.className =
                 "";
-
         },
         3000
     );
@@ -1365,7 +1271,6 @@ function showMessage(
 function escapeHtml(
     value
 ) {
-
     const div =
         document.createElement(
             "div"
@@ -1380,7 +1285,6 @@ function escapeHtml(
 }
 
 function loadTheme() {
-
     const savedTheme =
         localStorage.getItem(
             "nawalaTheme"
@@ -1390,16 +1294,13 @@ function loadTheme() {
         savedTheme ===
         "dark"
     ) {
-
         document.body.classList.add(
             "dark"
         );
 
         themeIcon.textContent =
             "☀";
-
     } else {
-
         document.body.classList.remove(
             "dark"
         );
@@ -1410,7 +1311,6 @@ function loadTheme() {
 }
 
 function toggleTheme() {
-
     document.body.classList.toggle(
         "dark"
     );
@@ -1438,7 +1338,6 @@ function showCustomModal(
     confirmText = "OK",
     showCancel = false
 ) {
-
     const modal =
         document.getElementById(
             "authModal"
@@ -1491,14 +1390,12 @@ function showCustomModal(
     ) {
         icon.textContent =
             "✓";
-
     } else if (
         type ===
         "error"
     ) {
         icon.textContent =
             "!";
-
     } else {
         icon.textContent =
             "i";
@@ -1533,14 +1430,12 @@ function showCustomModal(
 
     return new Promise(
         function(resolve) {
-
             let closed =
                 false;
 
             function finish(
                 result
             ) {
-
                 if (closed) {
                     return;
                 }
@@ -1581,22 +1476,27 @@ function showCustomModal(
             }
 
             function onConfirm() {
-                finish(true);
+                finish(
+                    true
+                );
             }
 
             function onCancel() {
-                finish(false);
+                finish(
+                    false
+                );
             }
 
             function onOverlay(
                 event
             ) {
-
                 if (
                     event.target ===
                     modal
                 ) {
-                    finish(false);
+                    finish(
+                        false
+                    );
                 }
             }
 
@@ -1625,11 +1525,9 @@ function showCustomModal(
 if (
     linkTable
 ) {
-
     linkTable.addEventListener(
         "click",
         async function(event) {
-
             const deleteButton =
                 event.target.closest(
                     "[data-delete-id]"
@@ -1656,9 +1554,7 @@ if (
 async function deleteLink(
     id
 ) {
-
     if (!id) {
-
         showCustomModal(
             "error",
             "Data Tidak Valid",
@@ -1686,7 +1582,6 @@ async function deleteLink(
     }
 
     try {
-
         showMessage(
             "Menghapus link...",
             "success"
@@ -1702,7 +1597,6 @@ async function deleteLink(
             !result ||
             !result.success
         ) {
-
             showCustomModal(
                 "error",
                 "Gagal Menghapus",
@@ -1736,7 +1630,6 @@ async function deleteLink(
         );
 
     } catch (error) {
-
         console.error(
             "DELETE LINK ERROR:",
             error
@@ -1745,7 +1638,6 @@ async function deleteLink(
         if (
             !sessionRedirecting
         ) {
-
             showCustomModal(
                 "error",
                 "Gagal Menghapus",
@@ -1757,11 +1649,9 @@ async function deleteLink(
         }
     }
 }
-
 if (
     themeToggle
 ) {
-
     themeToggle.addEventListener(
         "click",
         toggleTheme
@@ -1771,7 +1661,6 @@ if (
 if (
     addButton
 ) {
-
     addButton.addEventListener(
         "click",
         addLink
@@ -1781,7 +1670,6 @@ if (
 if (
     urlInput
 ) {
-
     urlInput.addEventListener(
         "keydown",
         function(event) {
@@ -1802,7 +1690,6 @@ if (
 if (
     searchInput
 ) {
-
     searchInput.addEventListener(
         "input",
         render
@@ -1812,7 +1699,6 @@ if (
 if (
     filterStatus
 ) {
-
     filterStatus.addEventListener(
         "change",
         render
@@ -1822,7 +1708,6 @@ if (
 if (
     checkAllButton
 ) {
-
     checkAllButton.addEventListener(
         "click",
         checkAllLinks
@@ -1830,9 +1715,26 @@ if (
 }
 
 if (
+    testTelegramButton
+) {
+    testTelegramButton.addEventListener(
+        "click",
+        testTelegram
+    );
+}
+
+if (
+    testNawalaButton
+) {
+    testNawalaButton.addEventListener(
+        "click",
+        testNawala
+    );
+}
+
+if (
     modalClose
 ) {
-
     modalClose.addEventListener(
         "click",
         closeCheckModal
@@ -1842,7 +1744,6 @@ if (
 if (
     modalDone
 ) {
-
     modalDone.addEventListener(
         "click",
         closeCheckModal
@@ -1852,7 +1753,6 @@ if (
 if (
     checkModal
 ) {
-
     checkModal.addEventListener(
         "click",
         function(event) {
