@@ -1,82 +1,281 @@
 const API_URL =
     "https://script.google.com/macros/s/AKfycbxIBZ1WTXgkyChtnfsAS40lP1PoCkKxOkMZolx5JxgFtIdTjmCIQFZkPAU5InLDb8zxZQ/exec";
 
-const SYNC_COOLDOWN_MS = 90000;
-const CHECK_POLL_INTERVAL_MS = 10000;
-const CHECK_MAX_WAIT_MS = 150000;
+
+const LOGIN_PAGE_URL =
+    "../index.html";
+
+
+const SESSION_KEY =
+    "nawala_session";
+
+
+const USERNAME_KEY =
+    "nawala_username";
+
+
+const SESSION_EXPIRES_KEY =
+    "nawala_session_expires";
+
+
+const SYNC_COOLDOWN_MS =
+    90000;
+
+
+const CHECK_POLL_INTERVAL_MS =
+    10000;
+
+
+const CHECK_MAX_WAIT_MS =
+    150000;
+
 
 let links = [];
+
 let activeCheck = false;
+
 let checkStartedAt = 0;
+
+let sessionRedirecting = false;
+
 
 const urlInput =
     document.getElementById("urlInput");
 
+
 const addButton =
     document.getElementById("addButton");
+
 
 const linkTable =
     document.getElementById("linkTable");
 
+
 const emptyState =
     document.getElementById("emptyState");
+
 
 const searchInput =
     document.getElementById("searchInput");
 
+
 const filterStatus =
     document.getElementById("filterStatus");
+
 
 const message =
     document.getElementById("message");
 
+
 const themeToggle =
     document.getElementById("themeToggle");
+
 
 const themeIcon =
     document.getElementById("themeIcon");
 
+
 const checkAllButton =
     document.getElementById("checkAllButton");
+
 
 const checkModal =
     document.getElementById("checkModal");
 
+
 const modalClose =
     document.getElementById("modalClose");
+
 
 const modalLoader =
     document.getElementById("modalLoader");
 
+
 const modalSuccessIcon =
     document.getElementById("modalSuccessIcon");
+
 
 const modalTitle =
     document.getElementById("modalTitle");
 
+
 const modalText =
     document.getElementById("modalText");
+
 
 const modalProgress =
     document.getElementById("modalProgress");
 
+
 const modalSummary =
     document.getElementById("modalSummary");
+
 
 const modalNormal =
     document.getElementById("modalNormal");
 
+
 const modalNawala =
     document.getElementById("modalNawala");
+
 
 const modalDone =
     document.getElementById("modalDone");
 
 
+/*
+ * =========================================================
+ * SESSION
+ * =========================================================
+ */
+
+function getSessionToken() {
+
+    return localStorage.getItem(
+        SESSION_KEY
+    ) || "";
+
+}
+
+
+function getSessionExpiresAt() {
+
+    return Number(
+        localStorage.getItem(
+            SESSION_EXPIRES_KEY
+        ) || 0
+    );
+
+}
+
+
+function hasLocalSession() {
+
+    const token =
+        getSessionToken();
+
+
+    if (!token) {
+        return false;
+    }
+
+
+    const expiresAt =
+        getSessionExpiresAt();
+
+
+    if (
+        expiresAt &&
+        Date.now() >= expiresAt
+    ) {
+
+        clearSession();
+
+        return false;
+
+    }
+
+
+    return true;
+
+}
+
+
+function clearSession() {
+
+    localStorage.removeItem(
+        SESSION_KEY
+    );
+
+
+    localStorage.removeItem(
+        USERNAME_KEY
+    );
+
+
+    localStorage.removeItem(
+        SESSION_EXPIRES_KEY
+    );
+
+}
+
+
+function redirectToLogin() {
+
+    if (
+        sessionRedirecting
+    ) {
+
+        return;
+
+    }
+
+
+    sessionRedirecting =
+        true;
+
+
+    clearSession();
+
+
+    window.location.replace(
+        LOGIN_PAGE_URL
+    );
+
+}
+
+
+function handleSessionExpired() {
+
+    showCustomModal(
+        "error",
+        "Session Berakhir",
+        "Sesi login kamu sudah tidak valid atau sudah expired. Silakan login kembali.",
+        "Login Kembali",
+        false
+    )
+    .then(
+        function() {
+
+            redirectToLogin();
+
+        }
+    );
+
+}
+
+
+/*
+ * =========================================================
+ * API REQUEST
+ * =========================================================
+ */
+
 function apiRequest(params) {
 
     return new Promise(
         function(resolve, reject) {
+
+            if (
+                !hasLocalSession()
+            ) {
+
+                redirectToLogin();
+
+                reject(
+                    new Error(
+                        "Session login tidak ditemukan."
+                    )
+                );
+
+                return;
+
+            }
+
+
+            const token =
+                getSessionToken();
+
 
             const callbackName =
                 "nawalaCallback_" +
@@ -86,17 +285,37 @@ function apiRequest(params) {
                     Math.random() * 100000
                 );
 
+
             const script =
-                document.createElement("script");
+                document.createElement(
+                    "script"
+                );
+
+
+            const requestParams = {
+
+                ...params,
+
+                token:
+                    token
+
+            };
+
 
             const query =
                 new URLSearchParams({
-                    ...params,
+
+                    ...requestParams,
+
                     callback:
                         callbackName
+
                 }).toString();
 
-            let finished = false;
+
+            let finished =
+                false;
+
 
             const timeout =
                 setTimeout(
@@ -119,6 +338,7 @@ function apiRequest(params) {
                     callbackName
                 ];
 
+
                 if (
                     script.parentNode
                 ) {
@@ -132,44 +352,101 @@ function apiRequest(params) {
             }
 
 
-            function finishSuccess(data) {
+            function finishSuccess(
+                data
+            ) {
 
-                if (finished) {
+                if (
+                    finished
+                ) {
+
                     return;
+
                 }
 
-                finished = true;
 
-                clearTimeout(timeout);
+                finished =
+                    true;
+
+
+                clearTimeout(
+                    timeout
+                );
+
 
                 cleanup();
 
-                resolve(data);
+
+                if (
+                    data &&
+                    (
+                        data.authenticated === false ||
+                        data.errorCode === "AUTH_REQUIRED" ||
+                        data.errorCode === "SESSION_EXPIRED"
+                    )
+                ) {
+
+                    handleSessionExpired();
+
+                    reject(
+                        new Error(
+                            data.error ||
+                            "Session sudah tidak valid."
+                        )
+                    );
+
+                    return;
+
+                }
+
+
+                resolve(
+                    data
+                );
 
             }
 
 
-            function finishError(error) {
+            function finishError(
+                error
+            ) {
 
-                if (finished) {
+                if (
+                    finished
+                ) {
+
                     return;
+
                 }
 
-                finished = true;
 
-                clearTimeout(timeout);
+                finished =
+                    true;
+
+
+                clearTimeout(
+                    timeout
+                );
+
 
                 cleanup();
 
-                reject(error);
+
+                reject(
+                    error
+                );
 
             }
 
 
-            window[callbackName] =
+            window[
+                callbackName
+            ] =
                 function(data) {
 
-                    finishSuccess(data);
+                    finishSuccess(
+                        data
+                    );
 
                 };
 
@@ -202,7 +479,15 @@ function apiRequest(params) {
 }
 
 
-function normalizeUrl(url) {
+/*
+ * =========================================================
+ * URL / TIME
+ * =========================================================
+ */
+
+function normalizeUrl(
+    url
+) {
 
     let value =
         String(
@@ -211,13 +496,19 @@ function normalizeUrl(url) {
 
 
     if (!value) {
+
         return "";
+
     }
 
 
     if (
-        !value.startsWith("http://") &&
-        !value.startsWith("https://")
+        !value.startsWith(
+            "http://"
+        ) &&
+        !value.startsWith(
+            "https://"
+        )
     ) {
 
         value =
@@ -232,10 +523,16 @@ function normalizeUrl(url) {
 }
 
 
-function formatTime(timestamp) {
+function formatTime(
+    timestamp
+) {
 
-    if (!timestamp) {
+    if (
+        !timestamp
+    ) {
+
         return "-";
+
     }
 
 
@@ -279,7 +576,9 @@ function formatTime(timestamp) {
 }
 
 
-function sleep(milliseconds) {
+function sleep(
+    milliseconds
+) {
 
     return new Promise(
         function(resolve) {
@@ -295,6 +594,12 @@ function sleep(milliseconds) {
 }
 
 
+/*
+ * =========================================================
+ * LOAD LINK
+ * =========================================================
+ */
+
 async function loadLinks(
     silent = false
 ) {
@@ -303,8 +608,10 @@ async function loadLinks(
 
         const result =
             await apiRequest({
+
                 action:
                     "list"
+
             });
 
 
@@ -333,13 +640,16 @@ async function loadLinks(
 
         render();
 
+
         updateLastUpdate();
 
 
         return true;
 
 
-    } catch (error) {
+    } catch (
+        error
+    ) {
 
         console.error(
             "LOAD LINKS ERROR:",
@@ -347,9 +657,13 @@ async function loadLinks(
         );
 
 
-        if (!silent) {
+        if (
+            !silent &&
+            !sessionRedirecting
+        ) {
 
             showMessage(
+                error.message ||
                 "Gagal mengambil data dari server.",
                 "error"
             );
@@ -363,6 +677,12 @@ async function loadLinks(
 
 }
 
+
+/*
+ * =========================================================
+ * ADD LINK
+ * =========================================================
+ */
 
 async function addLink() {
 
@@ -386,9 +706,14 @@ async function addLink() {
 
     try {
 
-        new URL(url);
+        new URL(
+            url
+        );
 
-    } catch (error) {
+
+    } catch (
+        error
+    ) {
 
         showMessage(
             "Format URL tidak valid.",
@@ -449,16 +774,14 @@ async function addLink() {
         await loadLinks();
 
 
-        /*
-         * Setelah link baru ditambahkan,
-         * mulai proses pengecekan di background.
-         */
         triggerSyncInBackground(
             true
         );
 
 
-    } catch (error) {
+    } catch (
+        error
+    ) {
 
         console.error(
             "ADD LINK ERROR:",
@@ -466,10 +789,17 @@ async function addLink() {
         );
 
 
-        showMessage(
-            "Gagal menambahkan link.",
-            "error"
-        );
+        if (
+            !sessionRedirecting
+        ) {
+
+            showMessage(
+                error.message ||
+                "Gagal menambahkan link.",
+                "error"
+            );
+
+        }
 
 
     } finally {
@@ -482,9 +812,17 @@ async function addLink() {
 }
 
 
+/*
+ * =========================================================
+ * CEK SEMUA LINK
+ * =========================================================
+ */
+
 async function checkAllLinks() {
 
-    if (activeCheck) {
+    if (
+        activeCheck
+    ) {
 
         showMessage(
             "Pengecekan sedang berjalan.",
@@ -517,27 +855,30 @@ async function checkAllLinks() {
 
 async function runFullCheck() {
 
-    if (activeCheck) {
+    if (
+        activeCheck
+    ) {
+
         return;
+
     }
 
 
     activeCheck =
         true;
 
+
     checkStartedAt =
         Date.now();
 
 
-    /*
-     * Semua baris langsung berubah menjadi
-     * status MENGECEK di tampilan.
-     */
     render();
+
 
     setCheckingControls(
         true
     );
+
 
     showCheckModal();
 
@@ -579,7 +920,9 @@ async function runFullCheck() {
             await waitForCheckComplete();
 
 
-        if (!completed) {
+        if (
+            !completed
+        ) {
 
             throw new Error(
                 "Pengecekan membutuhkan waktu lebih lama dari perkiraan."
@@ -594,7 +937,9 @@ async function runFullCheck() {
             );
 
 
-        if (!loaded) {
+        if (
+            !loaded
+        ) {
 
             throw new Error(
                 "Status terbaru gagal diambil."
@@ -612,7 +957,9 @@ async function runFullCheck() {
         );
 
 
-    } catch (error) {
+    } catch (
+        error
+    ) {
 
         console.error(
             "FULL CHECK ERROR:",
@@ -620,15 +967,21 @@ async function runFullCheck() {
         );
 
 
-        await loadLinks(
-            true
-        );
+        if (
+            !sessionRedirecting
+        ) {
+
+            await loadLinks(
+                true
+            );
 
 
-        showCheckModalError(
-            error.message ||
-            "Gagal menjalankan pengecekan."
-        );
+            showCheckModalError(
+                error.message ||
+                "Gagal menjalankan pengecekan."
+            );
+
+        }
 
 
     } finally {
@@ -636,9 +989,11 @@ async function runFullCheck() {
         activeCheck =
             false;
 
+
         setCheckingControls(
             false
         );
+
 
         render();
 
@@ -730,9 +1085,12 @@ async function waitForCheckComplete() {
             links =
                 data;
 
+
             render();
 
+
             updateLastUpdate();
+
 
             return true;
 
@@ -751,17 +1109,22 @@ async function getLatestLinks() {
     try {
 
         return await apiRequest({
+
             action:
                 "list"
+
         });
 
 
-    } catch (error) {
+    } catch (
+        error
+    ) {
 
         console.warn(
             "POLL ERROR:",
             error
         );
+
 
         return null;
 
@@ -770,11 +1133,19 @@ async function getLatestLinks() {
 }
 
 
+/*
+ * =========================================================
+ * SYNC
+ * =========================================================
+ */
+
 function triggerSync() {
 
     return apiRequest({
+
         action:
             "sync"
+
     })
     .catch(
         function(error) {
@@ -863,12 +1234,16 @@ function getLastSyncTrigger() {
 
 
     if (!value) {
+
         return 0;
+
     }
 
 
     const timestamp =
-        Number(value);
+        Number(
+            value
+        );
 
 
     if (
@@ -914,6 +1289,12 @@ function shouldTriggerSync() {
 }
 
 
+/*
+ * =========================================================
+ * CHECKING CONTROLS
+ * =========================================================
+ */
+
 function setCheckingControls(
     checking
 ) {
@@ -926,13 +1307,17 @@ function setCheckingControls(
             checking;
 
 
-        if (checking) {
+        if (
+            checking
+        ) {
 
             checkAllButton.dataset.originalText =
                 checkAllButton.textContent;
 
+
             checkAllButton.textContent =
                 "⏳ Mengecek Semua...";
+
 
         } else {
 
@@ -940,19 +1325,40 @@ function setCheckingControls(
                 checkAllButton.dataset.originalText ||
                 "↻ Cek Semua Link";
 
+
             delete checkAllButton.dataset.originalText;
 
         }
 
     }
 
+
+    if (
+        addButton
+    ) {
+
+        addButton.disabled =
+            checking;
+
+    }
+
 }
 
 
+/*
+ * =========================================================
+ * CHECK MODAL
+ * =========================================================
+ */
+
 function showCheckModal() {
 
-    if (!checkModal) {
+    if (
+        !checkModal
+    ) {
+
         return;
+
     }
 
 
@@ -1141,12 +1547,18 @@ function showCheckModalError(
 
 function closeCheckModal() {
 
-    if (!checkModal) {
+    if (
+        !checkModal
+    ) {
+
         return;
+
     }
 
 
-    if (activeCheck) {
+    if (
+        activeCheck
+    ) {
 
         return;
 
@@ -1170,6 +1582,12 @@ function closeCheckModal() {
 
 }
 
+
+/*
+ * =========================================================
+ * STATUS
+ * =========================================================
+ */
 
 function getStatusHTML(
     status
@@ -1281,6 +1699,12 @@ function getDisplayStatus(
 }
 
 
+/*
+ * =========================================================
+ * RENDER
+ * =========================================================
+ */
+
 function render() {
 
     const search =
@@ -1358,21 +1782,31 @@ function render() {
             row.innerHTML = `
 
                 <td>
+
                     <div class="url-cell">
+
                         ${escapeHtml(
                             item.url
                         )}
+
                     </div>
+
                 </td>
 
+
                 <td>
+
                     ${getStatusHTML(
                         displayStatus
                     )}
+
                 </td>
 
+
                 <td>
+
                     <span class="time-cell">
+
                         ${
                             activeCheck
                                 ? "Sedang diperiksa..."
@@ -1380,10 +1814,14 @@ function render() {
                                     item.lastChecked
                                 )
                         }
+
                     </span>
+
                 </td>
 
+
                 <td>
+
                     <div class="action-group">
 
                         <button
@@ -1397,6 +1835,7 @@ function render() {
                         </button>
 
                     </div>
+
                 </td>
 
             `;
@@ -1414,6 +1853,12 @@ function render() {
 
 }
 
+
+/*
+ * =========================================================
+ * STATISTICS
+ * =========================================================
+ */
 
 function updateStatistics() {
 
@@ -1528,6 +1973,12 @@ function updateStatistics() {
 }
 
 
+/*
+ * =========================================================
+ * LAST UPDATE
+ * =========================================================
+ */
+
 function updateLastUpdate() {
 
     const element =
@@ -1536,8 +1987,12 @@ function updateLastUpdate() {
         );
 
 
-    if (!element) {
+    if (
+        !element
+    ) {
+
         return;
+
     }
 
 
@@ -1559,13 +2014,23 @@ function updateLastUpdate() {
 }
 
 
+/*
+ * =========================================================
+ * MESSAGE
+ * =========================================================
+ */
+
 function showMessage(
     text,
     type
 ) {
 
-    if (!message) {
+    if (
+        !message
+    ) {
+
         return;
+
     }
 
 
@@ -1576,7 +2041,9 @@ function showMessage(
     message.className =
         type ===
         "success"
+
             ? "message-success"
+
             : "message-error";
 
 
@@ -1585,6 +2052,7 @@ function showMessage(
 
             message.textContent =
                 "";
+
 
             message.className =
                 "";
@@ -1595,6 +2063,12 @@ function showMessage(
 
 }
 
+
+/*
+ * =========================================================
+ * ESCAPE HTML
+ * =========================================================
+ */
 
 function escapeHtml(
     value
@@ -1617,6 +2091,12 @@ function escapeHtml(
 }
 
 
+/*
+ * =========================================================
+ * THEME
+ * =========================================================
+ */
+
 function loadTheme() {
 
     const savedTheme =
@@ -1634,6 +2114,7 @@ function loadTheme() {
             "dark"
         );
 
+
         themeIcon.textContent =
             "☀";
 
@@ -1642,6 +2123,7 @@ function loadTheme() {
         document.body.classList.remove(
             "dark"
         );
+
 
         themeIcon.textContent =
             "☀";
@@ -1678,42 +2160,259 @@ function toggleTheme() {
 }
 
 
-if (themeToggle) {
+/*
+ * =========================================================
+ * CUSTOM POPUP
+ * =========================================================
+ */
 
-    themeToggle.addEventListener(
-        "click",
-        toggleTheme
+function showCustomModal(
+    type,
+    title,
+    text,
+    confirmText = "OK",
+    showCancel = false
+) {
+
+    const modal =
+        document.getElementById(
+            "authModal"
+        );
+
+
+    const icon =
+        document.getElementById(
+            "authModalIcon"
+        );
+
+
+    const titleElement =
+        document.getElementById(
+            "authModalTitle"
+        );
+
+
+    const textElement =
+        document.getElementById(
+            "authModalText"
+        );
+
+
+    const cancelButton =
+        document.getElementById(
+            "authModalCancel"
+        );
+
+
+    const confirmButton =
+        document.getElementById(
+            "authModalConfirm"
+        );
+
+
+    if (
+        !modal ||
+        !icon ||
+        !titleElement ||
+        !textElement ||
+        !confirmButton
+    ) {
+
+        return Promise.resolve(
+            true
+        );
+
+    }
+
+
+    icon.className =
+        "auth-modal-icon " +
+        type;
+
+
+    if (
+        type ===
+        "success"
+    ) {
+
+        icon.textContent =
+            "✓";
+
+    } else if (
+        type ===
+        "error"
+    ) {
+
+        icon.textContent =
+            "!";
+
+    } else {
+
+        icon.textContent =
+            "i";
+
+    }
+
+
+    titleElement.textContent =
+        title;
+
+
+    textElement.textContent =
+        text;
+
+
+    confirmButton.textContent =
+        confirmText;
+
+
+    if (
+        cancelButton
+    ) {
+
+        cancelButton.style.display =
+            showCancel
+                ? "block"
+                : "none";
+
+    }
+
+
+    modal.classList.add(
+        "show"
     );
 
-}
 
-
-if (addButton) {
-
-    addButton.addEventListener(
-        "click",
-        addLink
+    modal.setAttribute(
+        "aria-hidden",
+        "false"
     );
 
-}
+
+    return new Promise(
+        function(resolve) {
+
+            let closed =
+                false;
 
 
-if (urlInput) {
-
-    urlInput.addEventListener(
-        "keydown",
-        function(event) {
-
-            if (
-                event.key ===
-                "Enter"
+            function finish(
+                result
             ) {
 
-                event.preventDefault();
+                if (
+                    closed
+                ) {
 
-                addLink();
+                    return;
+
+                }
+
+
+                closed =
+                    true;
+
+
+                modal.classList.remove(
+                    "show"
+                );
+
+
+                modal.setAttribute(
+                    "aria-hidden",
+                    "true"
+                );
+
+
+                confirmButton.removeEventListener(
+                    "click",
+                    onConfirm
+                );
+
+
+                if (
+                    cancelButton
+                ) {
+
+                    cancelButton.removeEventListener(
+                        "click",
+                        onCancel
+                    );
+
+                }
+
+
+                modal.removeEventListener(
+                    "click",
+                    onOverlay
+                );
+
+
+                resolve(
+                    result
+                );
 
             }
+
+
+            function onConfirm() {
+
+                finish(
+                    true
+                );
+
+            }
+
+
+            function onCancel() {
+
+                finish(
+                    false
+                );
+
+            }
+
+
+            function onOverlay(
+                event
+            ) {
+
+                if (
+                    event.target ===
+                    modal
+                ) {
+
+                    finish(
+                        false
+                    );
+
+                }
+
+            }
+
+
+            confirmButton.addEventListener(
+                "click",
+                onConfirm
+            );
+
+
+            if (
+                cancelButton
+            ) {
+
+                cancelButton.addEventListener(
+                    "click",
+                    onCancel
+                );
+
+            }
+
+
+            modal.addEventListener(
+                "click",
+                onOverlay
+            );
 
         }
     );
@@ -1721,41 +2420,15 @@ if (urlInput) {
 }
 
 
-if (searchInput) {
-
-    searchInput.addEventListener(
-        "input",
-        render
-    );
-
-}
-
-
-if (filterStatus) {
-
-    filterStatus.addEventListener(
-        "change",
-        render
-    );
-
-}
-
-
-if (checkAllButton) {
-
-    checkAllButton.addEventListener(
-        "click",
-        checkAllLinks
-    );
-
-}
-
-
 /*
- * Tombol Hapus ditangani di satu tempat.
- * Tidak menggunakan onclick inline.
+ * =========================================================
+ * DELETE LINK
+ * =========================================================
  */
-if (linkTable) {
+
+if (
+    linkTable
+) {
 
     linkTable.addEventListener(
         "click",
@@ -1796,11 +2469,16 @@ async function deleteLink(
     id
 ) {
 
-    if (!id) {
+    if (
+        !id
+    ) {
 
-        showMessage(
+        showCustomModal(
+            "error",
+            "Data Tidak Valid",
             "ID link tidak ditemukan.",
-            "error"
+            "Tutup",
+            false
         );
 
         return;
@@ -1809,12 +2487,18 @@ async function deleteLink(
 
 
     const confirmed =
-        window.confirm(
-            "Hapus link ini dari monitoring?"
+        await showCustomModal(
+            "info",
+            "Hapus Link?",
+            "Link ini akan dihapus dari daftar monitoring. Tindakan ini tidak dapat dibatalkan.",
+            "Hapus",
+            true
         );
 
 
-    if (!confirmed) {
+    if (
+        !confirmed
+    ) {
 
         return;
 
@@ -1846,12 +2530,15 @@ async function deleteLink(
             !result.success
         ) {
 
-            showMessage(
+            showCustomModal(
+                "error",
+                "Gagal Menghapus",
                 result &&
                 result.message
                     ? result.message
                     : "Gagal menghapus link.",
-                "error"
+                "Tutup",
+                false
             );
 
             return;
@@ -1859,17 +2546,15 @@ async function deleteLink(
         }
 
 
-        /*
-         * Pastikan data diambil ulang
-         * dari Google Sheets.
-         */
         const loaded =
             await loadLinks(
                 true
             );
 
 
-        if (!loaded) {
+        if (
+            !loaded
+        ) {
 
             throw new Error(
                 "Data terbaru gagal diambil."
@@ -1884,7 +2569,9 @@ async function deleteLink(
         );
 
 
-    } catch (error) {
+    } catch (
+        error
+    ) {
 
         console.error(
             "DELETE LINK ERROR:",
@@ -1892,18 +2579,120 @@ async function deleteLink(
         );
 
 
-        showMessage(
-            error.message ||
-            "Gagal menghapus link.",
-            "error"
-        );
+        if (
+            !sessionRedirecting
+        ) {
+
+            showCustomModal(
+                "error",
+                "Gagal Menghapus",
+                error.message ||
+                "Gagal menghapus link.",
+                "Tutup",
+                false
+            );
+
+        }
 
     }
 
 }
 
 
-if (modalClose) {
+/*
+ * =========================================================
+ * EVENTS
+ * =========================================================
+ */
+
+if (
+    themeToggle
+) {
+
+    themeToggle.addEventListener(
+        "click",
+        toggleTheme
+    );
+
+}
+
+
+if (
+    addButton
+) {
+
+    addButton.addEventListener(
+        "click",
+        addLink
+    );
+
+}
+
+
+if (
+    urlInput
+) {
+
+    urlInput.addEventListener(
+        "keydown",
+        function(event) {
+
+            if (
+                event.key ===
+                "Enter"
+            ) {
+
+                event.preventDefault();
+
+                addLink();
+
+            }
+
+        }
+    );
+
+}
+
+
+if (
+    searchInput
+) {
+
+    searchInput.addEventListener(
+        "input",
+        render
+    );
+
+}
+
+
+if (
+    filterStatus
+) {
+
+    filterStatus.addEventListener(
+        "change",
+        render
+    );
+
+}
+
+
+if (
+    checkAllButton
+) {
+
+    checkAllButton.addEventListener(
+        "click",
+        checkAllLinks
+    );
+
+}
+
+
+if (
+    modalClose
+) {
 
     modalClose.addEventListener(
         "click",
@@ -1913,7 +2702,9 @@ if (modalClose) {
 }
 
 
-if (modalDone) {
+if (
+    modalDone
+) {
 
     modalDone.addEventListener(
         "click",
@@ -1923,7 +2714,9 @@ if (modalDone) {
 }
 
 
-if (checkModal) {
+if (
+    checkModal
+) {
 
     checkModal.addEventListener(
         "click",
@@ -1967,17 +2760,30 @@ document.addEventListener(
 );
 
 
+/*
+ * =========================================================
+ * INIT
+ * =========================================================
+ */
+
 loadTheme();
 
 
-(async function init() {
-
-    await loadLinks();
+(function init() {
 
     /*
-     * Tetap melakukan sync otomatis
-     * saat website dibuka/refresh.
+     * dashboard/index.html hanya
+     * menjalankan script ini setelah
+     * session dinyatakan valid.
      */
-    triggerSyncInBackground();
+
+    loadLinks()
+        .then(
+            function() {
+
+                triggerSyncInBackground();
+
+            }
+        );
 
 })();
