@@ -1,5 +1,5 @@
 const API_URL =
-    "https://script.google.com/macros/s/AKfycbxIBZ1WTXgkyChtnfsAS40lP1PoCkKxOkMZolx5JxgFtIdTjmCIQFZkPAU5InLDb8zxZQ/exec";
+    "https://script.google.com/macros/s/AKfycbyjCX5TbD-37tW3C9tO009pdB6s3Jw8CU610qO73ltTNbOamq0OGDnd_SbKB5JTwkIq/exec";
 
 
 const LOGIN_PAGE_URL =
