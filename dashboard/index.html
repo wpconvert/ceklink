@@ -1,42 +1,21 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nawala Monitor</title>
-
-    <link
-        rel="stylesheet"
-        href="style.css"
-    >
+    <link rel="stylesheet" href="style.css">
 
     <style>
-
-        /* =========================================================
-           AUTH / PAGE GUARD
-           ========================================================= */
-
         body.auth-checking {
             visibility: hidden;
         }
-
-
-        /* =========================================================
-           TOP USER AREA
-           ========================================================= */
 
         .user-area {
             display: flex;
             align-items: center;
             gap: 10px;
         }
-
 
         .user-info {
             display: flex;
@@ -45,12 +24,10 @@
             gap: 2px;
         }
 
-
         .user-info span {
             color: var(--muted);
             font-size: 9px;
         }
-
 
         .user-info strong {
             color: var(--text-secondary);
@@ -58,312 +35,217 @@
             font-weight: 700;
         }
 
-
         .logout-button {
             height: 34px;
             padding: 0 12px;
-
             display: inline-flex;
             align-items: center;
             justify-content: center;
-
-            border:
-                1px solid
-                var(--border);
-
+            border: 1px solid var(--border);
             border-radius: 8px;
-
-            background:
-                var(--surface-soft);
-
-            color:
-                var(--text-secondary);
-
+            background: var(--surface-soft);
+            color: var(--text-secondary);
             font-size: 10px;
             font-weight: 700;
-
             cursor: pointer;
-
-            transition:
-                border-color .2s,
-                color .2s,
-                background .2s;
+            transition: border-color .2s, color .2s, background .2s;
         }
-
 
         .logout-button:hover {
-            border-color:
-                var(--red);
-
-            color:
-                var(--red);
-
-            background:
-                var(--red-bg);
+            border-color: var(--red);
+            color: var(--red);
+            background: var(--red-bg);
         }
 
+        .telegram-tools {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
 
-        /* =========================================================
-           AUTH MODAL
-           ========================================================= */
+        .telegram-button {
+            height: 32px;
+            padding: 0 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--surface-soft);
+            color: var(--text-secondary);
+            font-size: 9px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: .2s;
+        }
+
+        .telegram-button:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--blue-bg);
+        }
+
+        .telegram-button.alert:hover {
+            border-color: var(--red);
+            color: var(--red);
+            background: var(--red-bg);
+        }
+
+        .telegram-button:disabled {
+            opacity: .55;
+            cursor: not-allowed;
+        }
 
         .auth-modal-overlay {
             position: fixed;
-
             inset: 0;
-
             z-index: 20000;
-
             display: flex;
             align-items: center;
             justify-content: center;
-
             padding: 20px;
-
-            background:
-                rgba(10, 18, 32, .42);
-
-            backdrop-filter:
-                blur(5px);
-
+            background: rgba(10, 18, 32, .42);
+            backdrop-filter: blur(5px);
             opacity: 0;
             visibility: hidden;
-
-            transition:
-                opacity .2s ease,
-                visibility .2s ease;
+            transition: opacity .2s ease, visibility .2s ease;
         }
-
 
         .auth-modal-overlay.show {
             opacity: 1;
             visibility: visible;
         }
 
-
         .auth-modal-card {
-            width: min(380px, 100%);
-
-            padding:
-                28px 25px 24px;
-
-            border:
-                1px solid
-                var(--border);
-
-            border-radius:
-                16px;
-
-            background:
-                var(--surface);
-
-            box-shadow:
-                0 20px 60px
-                rgba(10, 18, 32, .20);
-
+            width: min(390px, 100%);
+            padding: 28px 25px 24px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: var(--surface);
+            box-shadow: 0 20px 60px rgba(10, 18, 32, .20);
             text-align: center;
-
-            transform:
-                translateY(10px)
-                scale(.96);
-
-            transition:
-                transform .25s ease;
+            transform: translateY(10px) scale(.96);
+            transition: transform .25s ease;
         }
 
-
-        .auth-modal-overlay.show
-        .auth-modal-card {
-            transform:
-                translateY(0)
-                scale(1);
+        .auth-modal-overlay.show .auth-modal-card {
+            transform: translateY(0) scale(1);
         }
-
 
         .auth-modal-icon {
             width: 48px;
             height: 48px;
-
-            margin:
-                0 auto 14px;
-
+            margin: 0 auto 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-
             border-radius: 50%;
-
-            background:
-                var(--blue-bg);
-
-            color:
-                var(--primary);
-
+            background: var(--blue-bg);
+            color: var(--primary);
             font-size: 21px;
             font-weight: 800;
         }
 
-
         .auth-modal-icon.error {
-            background:
-                var(--red-bg);
-
-            color:
-                var(--red);
+            background: var(--red-bg);
+            color: var(--red);
         }
-
 
         .auth-modal-icon.success {
-            background:
-                var(--green-bg);
-
-            color:
-                var(--green);
+            background: var(--green-bg);
+            color: var(--green);
         }
-
 
         .auth-modal-icon.info {
-            background:
-                var(--blue-bg);
-
-            color:
-                var(--primary);
+            background: var(--blue-bg);
+            color: var(--primary);
         }
-
 
         .auth-modal-title {
             margin-bottom: 7px;
-
-            color:
-                var(--text);
-
+            color: var(--text);
             font-size: 17px;
             font-weight: 750;
         }
 
-
         .auth-modal-text {
-            color:
-                var(--text-secondary);
-
+            color: var(--text-secondary);
             font-size: 11px;
-
             line-height: 1.65;
+            white-space: pre-line;
         }
-
 
         .auth-modal-actions {
             display: flex;
             gap: 8px;
-
             margin-top: 18px;
         }
 
-
         .auth-modal-button {
             flex: 1;
-
             height: 38px;
-
             border: none;
             border-radius: 8px;
-
-            background:
-                var(--primary);
-
+            background: var(--primary);
             color: #fff;
-
             font-size: 10px;
             font-weight: 700;
-
             cursor: pointer;
         }
 
-
         .auth-modal-button:hover {
-            background:
-                var(--primary-hover);
+            background: var(--primary-hover);
         }
-
 
         .auth-modal-button.secondary {
-            background:
-                var(--surface-soft);
-
-            color:
-                var(--text-secondary);
-
-            border:
-                1px solid
-                var(--border);
+            background: var(--surface-soft);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
         }
-
 
         .auth-modal-button.secondary:hover {
-            background:
-                var(--surface);
-
-            color:
-                var(--text);
+            background: var(--surface);
+            color: var(--text);
         }
 
-
-        /* =========================================================
-           RESPONSIVE USER AREA
-           ========================================================= */
+        @media (max-width: 980px) {
+            .header-right {
+                flex-wrap: wrap;
+            }
+        }
 
         @media (max-width: 780px) {
-
             .user-info {
                 display: none;
             }
 
-
-            .logout-button {
-                padding:
-                    0 10px;
+            .telegram-tools {
+                width: 100%;
             }
-
         }
 
+        @media (max-width: 560px) {
+            .telegram-tools {
+                display: none;
+            }
+        }
     </style>
-
 </head>
-
 
 <body class="auth-checking">
 
-
 <div class="container">
-
 
     <header class="header">
 
-
         <div class="brand">
-
-            <div class="brand-icon">
-                N
-            </div>
-
+            <div class="brand-icon">N</div>
 
             <div>
-
-                <h1>
-                    Nawala Monitor
-                </h1>
-
-                <p>
-                    Monitoring Status Link
-                </p>
-
+                <h1>Nawala Monitor</h1>
+                <p>Monitoring Status Link</p>
             </div>
-
         </div>
 
-
         <div class="header-right">
-
 
             <button
                 class="theme-toggle"
@@ -371,56 +253,47 @@
                 type="button"
                 title="Ganti tema"
             >
-
-                <span id="themeIcon">
-                    ☀
-                </span>
-
+                <span id="themeIcon">☀</span>
                 <span class="toggle-circle"></span>
-
-                <span>
-                    ☾
-                </span>
-
+                <span>☾</span>
             </button>
 
-
             <div class="system">
-
                 <span class="online-dot"></span>
-
                 System Online
-
             </div>
-
 
             <div class="update-info">
-
-                <span>
-                    Update terakhir
-                </span>
-
-                <strong id="lastUpdate">
-                    -
-                </strong>
-
+                <span>Update terakhir</span>
+                <strong id="lastUpdate">-</strong>
             </div>
 
+            <div class="telegram-tools">
+
+                <button
+                    class="telegram-button"
+                    id="testTelegramButton"
+                    type="button"
+                >
+                    🧪 Test Telegram
+                </button>
+
+                <button
+                    class="telegram-button alert"
+                    id="testNawalaButton"
+                    type="button"
+                >
+                    🚨 Test Alert
+                </button>
+
+            </div>
 
             <div class="user-area">
 
                 <div class="user-info">
-
-                    <span>
-                        Login sebagai
-                    </span>
-
-                    <strong id="loggedInUsername">
-                        -
-                    </strong>
-
+                    <span>Login sebagai</span>
+                    <strong id="loggedInUsername">-</strong>
                 </div>
-
 
                 <button
                     class="logout-button"
@@ -432,34 +305,22 @@
 
             </div>
 
-
         </div>
 
     </header>
 
-
     <main>
 
-
         <section class="dashboard">
-
 
             <div class="section-heading">
 
                 <div>
 
                     <div class="heading-title">
-
-                        <span class="heading-icon">
-                            ▦
-                        </span>
-
-                        <h2>
-                            Dashboard
-                        </h2>
-
+                        <span class="heading-icon">▦</span>
+                        <h2>Dashboard</h2>
                     </div>
-
 
                     <p>
                         Ringkasan status seluruh link yang sedang dipantau.
@@ -469,9 +330,7 @@
 
             </div>
 
-
             <div class="stats">
-
 
                 <div class="stat-card">
 
@@ -479,12 +338,9 @@
                         🔗
                     </div>
 
-
                     <div class="stat-content">
 
-                        <span>
-                            Total Link
-                        </span>
+                        <span>Total Link</span>
 
                         <strong id="totalLinks">
                             0
@@ -498,19 +354,15 @@
 
                 </div>
 
-
                 <div class="stat-card">
 
                     <div class="stat-icon green">
                         ✓
                     </div>
 
-
                     <div class="stat-content">
 
-                        <span>
-                            Normal
-                        </span>
+                        <span>Normal</span>
 
                         <strong id="normalLinks">
                             0
@@ -524,19 +376,15 @@
 
                 </div>
 
-
                 <div class="stat-card">
 
                     <div class="stat-icon red">
                         !
                     </div>
 
-
                     <div class="stat-content">
 
-                        <span>
-                            Nawala
-                        </span>
+                        <span>Nawala</span>
 
                         <strong id="blockedLinks">
                             0
@@ -550,19 +398,15 @@
 
                 </div>
 
-
                 <div class="stat-card">
 
                     <div class="stat-icon yellow">
                         ◷
                     </div>
 
-
                     <div class="stat-content">
 
-                        <span>
-                            Belum Dicek
-                        </span>
+                        <span>Belum Dicek</span>
 
                         <strong id="uncheckedLinks">
                             0
@@ -576,32 +420,20 @@
 
                 </div>
 
-
             </div>
-
 
         </section>
 
-
         <section class="panel">
-
 
             <div class="section-heading">
 
                 <div>
 
                     <div class="heading-title">
-
-                        <span class="heading-icon">
-                            🔗
-                        </span>
-
-                        <h2>
-                            Tambah Link
-                        </h2>
-
+                        <span class="heading-icon">🔗</span>
+                        <h2>Tambah Link</h2>
                     </div>
-
 
                     <p>
                         Masukkan link yang ingin kamu pantau.
@@ -611,16 +443,11 @@
 
             </div>
 
-
             <div class="add-box">
-
 
                 <div class="url-input">
 
-                    <span>
-                        🔗
-                    </span>
-
+                    <span>🔗</span>
 
                     <input
                         type="text"
@@ -631,7 +458,6 @@
 
                 </div>
 
-
                 <button
                     class="btn-primary"
                     id="addButton"
@@ -640,21 +466,15 @@
                     + Tambah Link
                 </button>
 
-
             </div>
-
 
             <div id="message"></div>
 
-
         </section>
-
 
         <section class="panel monitoring-panel">
 
-
             <div class="monitoring-heading">
-
 
                 <div>
 
@@ -670,16 +490,13 @@
 
                     </div>
 
-
                     <p>
                         Daftar seluruh link yang sedang dipantau.
                     </p>
 
                 </div>
 
-
                 <div class="monitoring-actions">
-
 
                     <button
                         class="btn-check-all"
@@ -689,13 +506,9 @@
                         ↻ Cek Semua Link
                     </button>
 
-
                     <div class="search">
 
-                        <span>
-                            ⌕
-                        </span>
-
+                        <span>⌕</span>
 
                         <input
                             type="text"
@@ -704,7 +517,6 @@
                         >
 
                     </div>
-
 
                     <select id="filterStatus">
 
@@ -726,46 +538,28 @@
 
                     </select>
 
-
                 </div>
 
             </div>
 
-
             <div class="table-container">
-
 
                 <table>
 
                     <thead>
 
                         <tr>
-
-                            <th>
-                                LINK
-                            </th>
-
-                            <th>
-                                STATUS
-                            </th>
-
-                            <th>
-                                TERAKHIR DICEK
-                            </th>
-
-                            <th>
-                                AKSI
-                            </th>
-
+                            <th>LINK</th>
+                            <th>STATUS</th>
+                            <th>TERAKHIR DICEK</th>
+                            <th>AKSI</th>
                         </tr>
 
                     </thead>
 
-
                     <tbody id="linkTable"></tbody>
 
                 </table>
-
 
                 <div
                     id="emptyState"
@@ -776,11 +570,9 @@
                         🔗
                     </div>
 
-
                     <h3>
                         Belum ada link
                     </h3>
-
 
                     <p>
                         Tambahkan link di atas untuk mulai monitoring.
@@ -788,15 +580,11 @@
 
                 </div>
 
-
             </div>
-
 
         </section>
 
-
     </main>
-
 
     <footer>
 
@@ -810,13 +598,7 @@
 
     </footer>
 
-
 </div>
-
-
-<!-- =========================================================
-     CHECK MODAL
-     ========================================================= -->
 
 <div
     class="modal-overlay"
@@ -830,7 +612,6 @@
         aria-modal="true"
     >
 
-
         <button
             class="modal-close"
             id="modalClose"
@@ -840,14 +621,12 @@
             ×
         </button>
 
-
         <div
             class="modal-loader"
             id="modalLoader"
         >
             <div class="spinner"></div>
         </div>
-
 
         <div
             class="modal-success-icon"
@@ -856,16 +635,13 @@
             ✓
         </div>
 
-
         <h3 id="modalTitle">
             Pengecekan Link
         </h3>
 
-
         <p id="modalText">
             Memulai pengecekan...
         </p>
-
 
         <div
             class="modal-progress"
@@ -873,7 +649,6 @@
         >
             <span></span>
         </div>
-
 
         <div
             class="modal-summary"
@@ -892,7 +667,6 @@
 
             </div>
 
-
             <div>
 
                 <span>
@@ -907,7 +681,6 @@
 
         </div>
 
-
         <button
             class="modal-done"
             id="modalDone"
@@ -916,15 +689,9 @@
             Tutup
         </button>
 
-
     </div>
 
 </div>
-
-
-<!-- =========================================================
-     CUSTOM AUTH MODAL
-     ========================================================= -->
 
 <div
     class="auth-modal-overlay"
@@ -932,13 +699,11 @@
     aria-hidden="true"
 >
 
-
     <div
         class="auth-modal-card"
         role="dialog"
         aria-modal="true"
     >
-
 
         <div
             class="auth-modal-icon info"
@@ -947,7 +712,6 @@
             i
         </div>
 
-
         <h3
             class="auth-modal-title"
             id="authModalTitle"
@@ -955,14 +719,12 @@
             Konfirmasi
         </h3>
 
-
         <p
             class="auth-modal-text"
             id="authModalText"
         >
             -
         </p>
-
 
         <div
             class="auth-modal-actions"
@@ -977,7 +739,6 @@
                 Batal
             </button>
 
-
             <button
                 class="auth-modal-button"
                 id="authModalConfirm"
@@ -988,43 +749,27 @@
 
         </div>
 
-
     </div>
-
 
 </div>
 
-
 <script>
-
-    /*
-     * =========================================================
-     * LOGIN SESSION
-     * =========================================================
-     */
-
     const LOGIN_API_URL =
         "https://script.google.com/macros/s/AKfycbx0aAqxAzjp5Fsappyf5qnbLV9uavVsM596x0kNsBqiwUP4vPlfJUjYnQXFvDvKezkS/exec";
-
 
     const LOGIN_PAGE_URL =
         "../index.html";
 
-
     const SESSION_KEY =
         "nawala_session";
-
 
     const USERNAME_KEY =
         "nawala_username";
 
-
     const SESSION_EXPIRES_KEY =
         "nawala_session_expires";
 
-
     function clearLoginSession() {
-
         localStorage.removeItem(
             SESSION_KEY
         );
@@ -1036,44 +781,30 @@
         localStorage.removeItem(
             SESSION_EXPIRES_KEY
         );
-
     }
 
-
     function redirectToLogin() {
-
         clearLoginSession();
 
         window.location.replace(
             LOGIN_PAGE_URL
         );
-
     }
 
-
     function getSessionToken() {
-
         return localStorage.getItem(
             SESSION_KEY
         ) || "";
-
     }
 
-
     function verifyDashboardSession() {
-
         const token =
             getSessionToken();
 
-
         if (!token) {
-
             redirectToLogin();
-
             return;
-
         }
-
 
         const expiresAt =
             Number(
@@ -1082,18 +813,13 @@
                 ) || 0
             );
 
-
         if (
             expiresAt &&
             Date.now() >= expiresAt
         ) {
-
             redirectToLogin();
-
             return;
-
         }
-
 
         const callbackName =
             "dashboardVerify_" +
@@ -1103,16 +829,12 @@
                 Math.random() * 100000
             );
 
-
         const script =
             document.createElement(
                 "script"
             );
 
-
-        let finished =
-            false;
-
+        let finished = false;
 
         const cleanup =
             function() {
@@ -1120,7 +842,6 @@
                 delete window[
                     callbackName
                 ];
-
 
                 if (
                     script.parentNode
@@ -1134,7 +855,6 @@
 
             };
 
-
         const timeout =
             setTimeout(
                 function() {
@@ -1143,20 +863,15 @@
                         return;
                     }
 
-
-                    finished =
-                        true;
-
+                    finished = true;
 
                     cleanup();
-
 
                     redirectToLogin();
 
                 },
                 12000
             );
-
 
         window[
             callbackName
@@ -1167,18 +882,13 @@
                     return;
                 }
 
-
-                finished =
-                    true;
-
+                finished = true;
 
                 clearTimeout(
                     timeout
                 );
 
-
                 cleanup();
-
 
                 if (
                     !result ||
@@ -1191,7 +901,6 @@
                     return;
 
                 }
-
 
                 if (
                     result.expiresAt
@@ -1206,7 +915,6 @@
 
                 }
 
-
                 const username =
                     result.username ||
                     localStorage.getItem(
@@ -1214,18 +922,15 @@
                     ) ||
                     "admin";
 
-
                 localStorage.setItem(
                     USERNAME_KEY,
                     username
                 );
 
-
                 const usernameElement =
                     document.getElementById(
                         "loggedInUsername"
                     );
-
 
                 if (
                     usernameElement
@@ -1236,11 +941,9 @@
 
                 }
 
-
                 document.body.classList.remove(
                     "auth-checking"
                 );
-
 
                 if (
                     typeof window.dashboardReady ===
@@ -1253,7 +956,6 @@
 
             };
 
-
         script.onerror =
             function() {
 
@@ -1261,13 +963,9 @@
                     timeout
                 );
 
+                if (!finished) {
 
-                if (
-                    !finished
-                ) {
-
-                    finished =
-                        true;
+                    finished = true;
 
                     cleanup();
 
@@ -1277,275 +975,224 @@
 
             };
 
-
         const params =
             new URLSearchParams({
-
                 action:
                     "verify",
-
                 token:
                     token,
-
                 callback:
                     callbackName
-
             });
-
 
         script.src =
             LOGIN_API_URL +
             "?" +
             params.toString();
 
-
-        document.body.appendChild(
+        document.head.appendChild(
             script
         );
-
     }
 
-
-    /*
-     * =========================================================
-     * CUSTOM AUTH MODAL
-     * =========================================================
-     */
-
-    const authModal =
-        document.getElementById(
-            "authModal"
-        );
-
-
-    const authModalIcon =
-        document.getElementById(
-            "authModalIcon"
-        );
-
-
-    const authModalTitle =
-        document.getElementById(
-            "authModalTitle"
-        );
-
-
-    const authModalText =
-        document.getElementById(
-            "authModalText"
-        );
-
-
-    const authModalCancel =
-        document.getElementById(
-            "authModalCancel"
-        );
-
-
-    const authModalConfirm =
-        document.getElementById(
-            "authModalConfirm"
-        );
-
-
-    let authModalResolve =
-        null;
-
-
-    function openAuthModal(
+    function showAuthModal(
         type,
         title,
         text,
-        confirmText = "Lanjut",
-        showCancel = true
+        confirmText,
+        showCancel
     ) {
 
-        authModalIcon.className =
+        const modal =
+            document.getElementById(
+                "authModal"
+            );
+
+        const icon =
+            document.getElementById(
+                "authModalIcon"
+            );
+
+        const titleElement =
+            document.getElementById(
+                "authModalTitle"
+            );
+
+        const textElement =
+            document.getElementById(
+                "authModalText"
+            );
+
+        const cancelButton =
+            document.getElementById(
+                "authModalCancel"
+            );
+
+        const confirmButton =
+            document.getElementById(
+                "authModalConfirm"
+            );
+
+        icon.className =
             "auth-modal-icon " +
             type;
 
-
         if (
-            type === "success"
+            type ===
+            "success"
         ) {
 
-            authModalIcon.textContent =
+            icon.textContent =
                 "✓";
 
         } else if (
-            type === "error"
+            type ===
+            "error"
         ) {
 
-            authModalIcon.textContent =
+            icon.textContent =
                 "!";
 
         } else {
 
-            authModalIcon.textContent =
+            icon.textContent =
                 "i";
 
         }
 
-
-        authModalTitle.textContent =
+        titleElement.textContent =
             title;
 
-
-        authModalText.textContent =
+        textElement.textContent =
             text;
 
+        confirmButton.textContent =
+            confirmText ||
+            "OK";
 
-        authModalConfirm.textContent =
-            confirmText;
-
-
-        authModalCancel.style.display =
+        cancelButton.style.display =
             showCancel
                 ? "block"
                 : "none";
 
-
-        authModal.classList.add(
+        modal.classList.add(
             "show"
         );
 
-
-        authModal.setAttribute(
+        modal.setAttribute(
             "aria-hidden",
             "false"
         );
 
-
         return new Promise(
             function(resolve) {
 
-                authModalResolve =
-                    resolve;
+                let done =
+                    false;
 
-            }
-        );
+                function finish(
+                    result
+                ) {
 
-    }
+                    if (done) {
+                        return;
+                    }
 
+                    done = true;
 
-    function closeAuthModal(
-        result
-    ) {
+                    modal.classList.remove(
+                        "show"
+                    );
 
-        authModal.classList.remove(
-            "show"
-        );
+                    modal.setAttribute(
+                        "aria-hidden",
+                        "true"
+                    );
 
+                    confirmButton.removeEventListener(
+                        "click",
+                        onConfirm
+                    );
 
-        authModal.setAttribute(
-            "aria-hidden",
-            "true"
-        );
+                    cancelButton.removeEventListener(
+                        "click",
+                        onCancel
+                    );
 
+                    modal.removeEventListener(
+                        "click",
+                        onOverlay
+                    );
 
-        if (
-            authModalResolve
-        ) {
+                    resolve(
+                        result
+                    );
+                }
 
-            const resolve =
-                authModalResolve;
+                function onConfirm() {
+                    finish(true);
+                }
 
-            authModalResolve =
-                null;
+                function onCancel() {
+                    finish(false);
+                }
 
-            resolve(
-                result
-            );
+                function onOverlay(
+                    event
+                ) {
 
-        }
+                    if (
+                        event.target ===
+                        modal
+                    ) {
 
-    }
+                        finish(false);
 
+                    }
 
-    authModalCancel.addEventListener(
-        "click",
-        function() {
+                }
 
-            closeAuthModal(
-                false
-            );
+                confirmButton.addEventListener(
+                    "click",
+                    onConfirm
+                );
 
-        }
-    );
+                cancelButton.addEventListener(
+                    "click",
+                    onCancel
+                );
 
-
-    authModalConfirm.addEventListener(
-        "click",
-        function() {
-
-            closeAuthModal(
-                true
-            );
-
-        }
-    );
-
-
-    authModal.addEventListener(
-        "click",
-        function(event) {
-
-            if (
-                event.target ===
-                authModal
-            ) {
-
-                closeAuthModal(
-                    false
+                modal.addEventListener(
+                    "click",
+                    onOverlay
                 );
 
             }
-
-        }
-    );
-
-
-    /*
-     * =========================================================
-     * LOGOUT
-     * =========================================================
-     */
-
-    const logoutButton =
-        document.getElementById(
-            "logoutButton"
         );
-
+    }
 
     async function logout() {
 
         const confirmed =
-            await openAuthModal(
+            await showAuthModal(
                 "info",
-                "Keluar dari Dashboard",
-                "Kamu akan keluar dari sesi login saat ini.",
+                "Logout",
+                "Kamu akan keluar dari dashboard.",
                 "Logout",
                 true
             );
-
 
         if (!confirmed) {
             return;
         }
 
-
         const token =
             getSessionToken();
 
-
         if (!token) {
-
             redirectToLogin();
-
             return;
-
         }
-
 
         const callbackName =
             "logoutCallback_" +
@@ -1555,16 +1202,12 @@
                 Math.random() * 100000
             );
 
-
         const script =
             document.createElement(
                 "script"
             );
 
-
-        let finished =
-            false;
-
+        let finished = false;
 
         const cleanup =
             function() {
@@ -1572,7 +1215,6 @@
                 delete window[
                     callbackName
                 ];
-
 
                 if (
                     script.parentNode
@@ -1586,28 +1228,18 @@
 
             };
 
-
-        const finishLogout =
+        const finish =
             function() {
 
-                if (
-                    finished
-                ) {
-
+                if (finished) {
                     return;
-
                 }
 
-
-                finished =
-                    true;
-
+                finished = true;
 
                 cleanup();
 
-
                 clearLoginSession();
-
 
                 window.location.replace(
                     LOGIN_PAGE_URL
@@ -1615,13 +1247,11 @@
 
             };
 
-
         const timeout =
             setTimeout(
-                finishLogout,
+                finish,
                 10000
             );
-
 
         window[
             callbackName
@@ -1632,10 +1262,9 @@
                     timeout
                 );
 
-                finishLogout();
+                finish();
 
             };
-
 
         script.onerror =
             function() {
@@ -1644,38 +1273,29 @@
                     timeout
                 );
 
-                finishLogout();
+                finish();
 
             };
 
-
-        const params =
-            new URLSearchParams({
-
-                action:
-                    "logout",
-
-                token:
-                    token,
-
-                callback:
-                    callbackName
-
-            });
-
-
         script.src =
             LOGIN_API_URL +
-            "?" +
-            params.toString();
-
+            "?action=logout" +
+            "&token=" +
+            encodeURIComponent(
+                token
+            ) +
+            "&callback=" +
+            callbackName;
 
         document.body.appendChild(
             script
         );
-
     }
 
+    const logoutButton =
+        document.getElementById(
+            "logoutButton"
+        );
 
     if (
         logoutButton
@@ -1688,20 +1308,8 @@
 
     }
 
-
-    /*
-     * =========================================================
-     * DASHBOARD START
-     * =========================================================
-     */
-
     window.dashboardReady =
         function() {
-
-            /*
-             * Script.js lama akan di-load
-             * setelah session dinyatakan valid.
-             */
 
             const script =
                 document.createElement(
@@ -1711,10 +1319,32 @@
             script.src =
                 "script.js";
 
+            script.onload =
+                function() {
 
-            script.defer =
-                true;
+                    if (
+                        typeof window.initMonitor ===
+                        "function"
+                    ) {
 
+                        window.initMonitor();
+
+                    }
+
+                };
+
+            script.onerror =
+                function() {
+
+                    showAuthModal(
+                        "error",
+                        "Gagal Memuat Dashboard",
+                        "File dashboard tidak dapat dimuat.",
+                        "Tutup",
+                        false
+                    );
+
+                };
 
             document.body.appendChild(
                 script
@@ -1722,11 +1352,8 @@
 
         };
 
-
     verifyDashboardSession();
-
 </script>
-
 
 </body>
 </html>
