@@ -1,5 +1,4 @@
-const API_URL =
-    "https://script.google.com/macros/s/AKfycbyjCX5TbD-37tW3C9tO009pdB6s3Jw8CU610qO73ltTNbOamq0OGDnd_SbKB5JTwkIq/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyjCX5TbD-37tW3C9tO009pdB6s3Jw8CU610qO73ltTNbOamq0OGDnd_SbKB5JTwkIq/exec";
 
 const MONITOR_LOGIN_PAGE_URL = "../index.html";
 const MONITOR_SESSION_KEY = "nawala_session";
@@ -26,6 +25,7 @@ const themeIcon = document.getElementById("themeIcon");
 const checkAllButton = document.getElementById("checkAllButton");
 const testTelegramButton = document.getElementById("testTelegramButton");
 const testNawalaButton = document.getElementById("testNawalaButton");
+
 const checkModal = document.getElementById("checkModal");
 const modalClose = document.getElementById("modalClose");
 const modalLoader = document.getElementById("modalLoader");
@@ -82,7 +82,6 @@ function redirectToLogin() {
     }
 
     sessionRedirecting = true;
-
     clearSession();
 
     window.location.replace(
@@ -96,7 +95,6 @@ function handleSessionExpired() {
     }
 
     sessionRedirecting = true;
-
     clearSession();
 
     showCustomModal(
@@ -130,8 +128,7 @@ function apiRequest(params) {
                 return;
             }
 
-            const token =
-                getSessionToken();
+            const token = getSessionToken();
 
             const callbackName =
                 "nawalaCallback_" +
@@ -155,19 +152,17 @@ function apiRequest(params) {
 
             let finished = false;
 
-        const timeout =
-            setTimeout(
-                function() {
-
-                    finishError(
-                        new Error(
-                            "Server tidak merespons."
-                        )
-                    );
-
-                },
-                60000
-            );
+            const timeout =
+                setTimeout(
+                    function() {
+                        finishError(
+                            new Error(
+                                "Server tidak merespons."
+                            )
+                        );
+                    },
+                    60000
+                );
 
             function cleanup() {
                 delete window[
@@ -424,7 +419,6 @@ async function addLink() {
     addButton.disabled = true;
 
     try {
-
         const result =
             await apiRequest({
                 action: "add",
@@ -514,7 +508,12 @@ async function testTelegram() {
     }
 
     testTelegramButton.disabled = true;
-    testNawalaButton.disabled = true;
+
+    if (
+        testNawalaButton
+    ) {
+        testNawalaButton.disabled = true;
+    }
 
     try {
 
@@ -571,7 +570,12 @@ async function testTelegram() {
     } finally {
 
         testTelegramButton.disabled = false;
-        testNawalaButton.disabled = false;
+
+        if (
+            testNawalaButton
+        ) {
+            testNawalaButton.disabled = false;
+        }
 
     }
 }
@@ -596,7 +600,12 @@ async function testNawala() {
     }
 
     testTelegramButton.disabled = true;
-    testNawalaButton.disabled = true;
+
+    if (
+        testNawalaButton
+    ) {
+        testNawalaButton.disabled = true;
+    }
 
     try {
 
@@ -653,7 +662,12 @@ async function testNawala() {
     } finally {
 
         testTelegramButton.disabled = false;
-        testNawalaButton.disabled = false;
+
+        if (
+            testNawalaButton
+        ) {
+            testNawalaButton.disabled = false;
+        }
 
     }
 }
@@ -757,7 +771,6 @@ async function runFullCheck() {
 }
 
 async function waitForCheckComplete() {
-
     while (true) {
 
         if (
@@ -839,7 +852,6 @@ async function waitForCheckComplete() {
 }
 
 async function getLatestLinks() {
-
     try {
 
         return await apiRequest({
@@ -858,7 +870,6 @@ async function getLatestLinks() {
 }
 
 function triggerSync() {
-
     return apiRequest({
         action: "sync"
     })
@@ -924,7 +935,6 @@ function triggerSyncInBackground(
 }
 
 function getLastSyncTrigger() {
-
     const value =
         localStorage.getItem(
             "nawalaLastSyncTrigger"
@@ -949,7 +959,6 @@ function getLastSyncTrigger() {
 }
 
 function setLastSyncTrigger() {
-
     localStorage.setItem(
         "nawalaLastSyncTrigger",
         String(
@@ -959,7 +968,6 @@ function setLastSyncTrigger() {
 }
 
 function shouldTriggerSync() {
-
     const lastSync =
         getLastSyncTrigger();
 
@@ -1278,9 +1286,7 @@ function getDisplayStatus(
     if (
         activeCheck
     ) {
-
         return "checking";
-
     }
 
     return (
@@ -1356,7 +1362,6 @@ function render() {
                 );
 
             row.innerHTML = `
-
                 <td>
                     <div class="url-cell">
                         ${escapeHtml(item.url)}
@@ -1392,7 +1397,6 @@ function render() {
                         </button>
                     </div>
                 </td>
-
             `;
 
             linkTable.appendChild(
@@ -1515,9 +1519,7 @@ function updateLastUpdate() {
     if (
         !element
     ) {
-
         return;
-
     }
 
     element.textContent =
@@ -1539,9 +1541,7 @@ function showMessage(
     if (
         !message
     ) {
-
         return;
-
     }
 
     message.textContent =
@@ -1758,9 +1758,7 @@ function showCustomModal(
                 if (
                     closed
                 ) {
-
                     return;
-
                 }
 
                 closed =
@@ -1803,19 +1801,15 @@ function showCustomModal(
             }
 
             function onConfirm() {
-
                 finish(
                     true
                 );
-
             }
 
             function onCancel() {
-
                 finish(
                     false
                 );
-
             }
 
             function onOverlay(
@@ -1876,9 +1870,7 @@ if (
             if (
                 !deleteButton
             ) {
-
                 return;
-
             }
 
             const id =
@@ -1946,7 +1938,7 @@ async function deleteLink(
             !result.success
         ) {
 
-            showCustomModal(
+            await showCustomModal(
                 "error",
                 "Gagal Menghapus",
                 result &&
@@ -1992,7 +1984,7 @@ async function deleteLink(
             !sessionRedirecting
         ) {
 
-            showCustomModal(
+            await showCustomModal(
                 "error",
                 "Gagal Menghapus",
                 error.message ||
@@ -2178,8 +2170,6 @@ loadTheme();
 loadLinks()
     .then(
         function() {
-
             triggerSyncInBackground();
-
         }
     );
