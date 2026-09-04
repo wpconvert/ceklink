@@ -7,8 +7,7 @@ const MONITOR_USERNAME_KEY = "nawala_username";
 const MONITOR_SESSION_EXPIRES_KEY = "nawala_session_expires";
 
 const SYNC_COOLDOWN_MS = 90000;
-const CHECK_POLL_INTERVAL_MS = 10000;
-const CHECK_MAX_WAIT_MS = 150000;
+const CHECK_POLL_INTERVAL_MS = 3000;
 
 let links = [];
 let activeCheck = false;
@@ -518,6 +517,7 @@ async function testTelegram() {
     testNawalaButton.disabled = true;
 
     try {
+
         const result =
             await apiRequest({
                 action: "testTelegram"
@@ -527,6 +527,7 @@ async function testTelegram() {
             result &&
             result.success
         ) {
+
             await showCustomModal(
                 "success",
                 "Telegram Berhasil",
@@ -534,7 +535,9 @@ async function testTelegram() {
                 "Tutup",
                 false
             );
+
         } else {
+
             await showCustomModal(
                 "error",
                 "Telegram Gagal",
@@ -545,6 +548,7 @@ async function testTelegram() {
                 "Tutup",
                 false
             );
+
         }
 
     } catch (error) {
@@ -552,6 +556,7 @@ async function testTelegram() {
         if (
             !sessionRedirecting
         ) {
+
             await showCustomModal(
                 "error",
                 "Telegram Gagal",
@@ -560,6 +565,7 @@ async function testTelegram() {
                 "Tutup",
                 false
             );
+
         }
 
     } finally {
@@ -603,6 +609,7 @@ async function testNawala() {
             result &&
             result.success
         ) {
+
             await showCustomModal(
                 "success",
                 "Alert Terkirim",
@@ -610,7 +617,9 @@ async function testNawala() {
                 "Tutup",
                 false
             );
+
         } else {
+
             await showCustomModal(
                 "error",
                 "Alert Gagal",
@@ -621,6 +630,7 @@ async function testNawala() {
                 "Tutup",
                 false
             );
+
         }
 
     } catch (error) {
@@ -628,6 +638,7 @@ async function testNawala() {
         if (
             !sessionRedirecting
         ) {
+
             await showCustomModal(
                 "error",
                 "Alert Gagal",
@@ -636,6 +647,7 @@ async function testNawala() {
                 "Tutup",
                 false
             );
+
         }
 
     } finally {
@@ -689,7 +701,7 @@ async function runFullCheck() {
 
         if (!completed) {
             throw new Error(
-                "Pengecekan membutuhkan waktu lebih lama dari perkiraan."
+                "Pengecekan dihentikan."
             );
         }
 
@@ -730,6 +742,7 @@ async function runFullCheck() {
                 error.message ||
                 "Gagal menjalankan pengecekan."
             );
+
         }
 
     } finally {
@@ -744,14 +757,14 @@ async function runFullCheck() {
 }
 
 async function waitForCheckComplete() {
-    const started =
-        Date.now();
 
-    while (
-        Date.now() -
-        started <
-        CHECK_MAX_WAIT_MS
-    ) {
+    while (true) {
+
+        if (
+            sessionRedirecting
+        ) {
+            return false;
+        }
 
         await sleep(
             CHECK_POLL_INTERVAL_MS
@@ -759,6 +772,12 @@ async function waitForCheckComplete() {
 
         const result =
             await getLatestLinks();
+
+        if (
+            sessionRedirecting
+        ) {
+            return false;
+        }
 
         if (
             !result ||
@@ -799,6 +818,7 @@ async function waitForCheckComplete() {
                         checkedTime >=
                         checkStartedAt - 10000
                     );
+
                 }
             );
 
@@ -816,11 +836,10 @@ async function waitForCheckComplete() {
             return true;
         }
     }
-
-    return false;
 }
 
 async function getLatestLinks() {
+
     try {
 
         return await apiRequest({
@@ -839,6 +858,7 @@ async function getLatestLinks() {
 }
 
 function triggerSync() {
+
     return apiRequest({
         action: "sync"
     })
@@ -876,6 +896,7 @@ function triggerSyncInBackground(
                     !result ||
                     !result.success
                 ) {
+
                     console.warn(
                         "BACKGROUND SYNC FAILED:",
                         result
@@ -979,6 +1000,7 @@ function setCheckingControls(
             delete checkAllButton.dataset.originalText;
 
         }
+
     }
 
     if (
@@ -1256,7 +1278,9 @@ function getDisplayStatus(
     if (
         activeCheck
     ) {
+
         return "checking";
+
     }
 
     return (
@@ -1306,6 +1330,7 @@ function render() {
 
                 }
             );
+
     }
 
     linkTable.innerHTML =
@@ -1490,7 +1515,9 @@ function updateLastUpdate() {
     if (
         !element
     ) {
+
         return;
+
     }
 
     element.textContent =
@@ -1512,7 +1539,9 @@ function showMessage(
     if (
         !message
     ) {
+
         return;
+
     }
 
     message.textContent =
@@ -1729,7 +1758,9 @@ function showCustomModal(
                 if (
                     closed
                 ) {
+
                     return;
+
                 }
 
                 closed =
@@ -1772,15 +1803,19 @@ function showCustomModal(
             }
 
             function onConfirm() {
+
                 finish(
                     true
                 );
+
             }
 
             function onCancel() {
+
                 finish(
                     false
                 );
+
             }
 
             function onOverlay(
@@ -1797,6 +1832,7 @@ function showCustomModal(
                     );
 
                 }
+
             }
 
             confirmButton.addEventListener(
@@ -1840,7 +1876,9 @@ if (
             if (
                 !deleteButton
             ) {
+
                 return;
+
             }
 
             const id =
@@ -1920,6 +1958,7 @@ async function deleteLink(
             );
 
             return;
+
         }
 
         const loaded =
