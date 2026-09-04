@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
+
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
@@ -103,8 +104,6 @@
         }
 
 
-        /* BACKGROUND */
-
         .page-background {
             position: fixed;
             inset: 0;
@@ -149,8 +148,6 @@
         }
 
 
-        /* LOGIN WRAPPER */
-
         .login-wrapper {
             position: relative;
 
@@ -165,6 +162,7 @@
 
             from {
                 opacity: 0;
+
                 transform:
                     translateY(12px)
                     scale(.98);
@@ -172,6 +170,7 @@
 
             to {
                 opacity: 1;
+
                 transform:
                     translateY(0)
                     scale(1);
@@ -179,8 +178,6 @@
 
         }
 
-
-        /* CARD */
 
         .login-card {
             position: relative;
@@ -216,8 +213,6 @@
                 34px 34px 30px;
         }
 
-
-        /* BRAND */
 
         .brand {
             display: flex;
@@ -271,8 +266,6 @@
         }
 
 
-        /* HEADER */
-
         .login-title {
             margin-bottom: 7px;
 
@@ -292,8 +285,6 @@
             line-height: 1.6;
         }
 
-
-        /* FORM */
 
         .form-group {
             margin-bottom: 16px;
@@ -427,8 +418,6 @@
         }
 
 
-        /* OPTIONS */
-
         .form-options {
             display: flex;
             align-items: center;
@@ -485,8 +474,6 @@
             text-decoration: underline;
         }
 
-
-        /* LOGIN BUTTON */
 
         .login-button {
             width: 100%;
@@ -587,8 +574,6 @@
         }
 
 
-        /* STATUS */
-
         .inline-status {
             min-height: 16px;
 
@@ -612,8 +597,6 @@
         }
 
 
-        /* FOOTER */
-
         .login-footer {
             padding:
                 0 34px 25px;
@@ -634,8 +617,6 @@
             font-weight: 600;
         }
 
-
-        /* THEME */
 
         .theme-button {
             position: absolute;
@@ -679,8 +660,6 @@
                 var(--primary);
         }
 
-
-        /* MODAL */
 
         .modal-overlay {
             position: fixed;
@@ -846,8 +825,6 @@
         }
 
 
-        /* RESPONSIVE */
-
         @media (max-width: 500px) {
 
             body {
@@ -855,15 +832,18 @@
                     14px;
             }
 
+
             .login-content {
                 padding:
                     28px 22px 24px;
             }
 
+
             .login-footer {
                 padding:
                     0 22px 21px;
             }
+
 
             .login-title {
                 font-size: 21px;
@@ -881,6 +861,7 @@
 <div class="page-background">
 
     <div class="background-circle circle-one"></div>
+
     <div class="background-circle circle-two"></div>
 
 </div>
@@ -962,6 +943,7 @@
                             ◉
                         </span>
 
+
                         <input
                             class="field-input"
                             id="username"
@@ -1032,6 +1014,7 @@
                             type="checkbox"
                         >
 
+
                         <label for="remember">
                             Ingat saya
                         </label>
@@ -1059,6 +1042,7 @@
                     <span
                         class="button-spinner"
                     ></span>
+
 
                     <span id="loginButtonText">
                         Masuk ke Dashboard
@@ -1092,8 +1076,6 @@
 
 </div>
 
-
-<!-- CUSTOM MODAL -->
 
 <div
     class="modal-overlay"
@@ -1146,12 +1128,24 @@
 
 <script>
 
-    /*
-     * URL GAS akan kita isi ketika sistem login
-     * di Code.gs sudah dibuat.
-     */
     const API_URL =
-        "GANTI_DENGAN_URL_GAS_LOGIN";
+        "https://script.google.com/macros/s/AKfycbx0aAqxAzjp5Fsappyf5qnbLV9uavVsM596x0kNsBqiwUP4vPlfJUjYnQXFvDvKezkS/exec";
+
+
+    const DASHBOARD_URL =
+        "dashboard/index.html";
+
+
+    const SESSION_KEY =
+        "nawala_session";
+
+
+    const USERNAME_KEY =
+        "nawala_username";
+
+
+    const SESSION_EXPIRES_KEY =
+        "nawala_session_expires";
 
 
     const loginForm =
@@ -1448,6 +1442,251 @@
     }
 
 
+    function clearSession() {
+
+        localStorage.removeItem(
+            SESSION_KEY
+        );
+
+        localStorage.removeItem(
+            USERNAME_KEY
+        );
+
+        localStorage.removeItem(
+            SESSION_EXPIRES_KEY
+        );
+
+    }
+
+
+    function getStoredSession() {
+
+        const token =
+            localStorage.getItem(
+                SESSION_KEY
+            );
+
+
+        const expiresAt =
+            Number(
+                localStorage.getItem(
+                    SESSION_EXPIRES_KEY
+                ) || 0
+            );
+
+
+        if (!token) {
+            return null;
+        }
+
+
+        if (
+            expiresAt &&
+            Date.now() >= expiresAt
+        ) {
+
+            clearSession();
+
+            return null;
+
+        }
+
+
+        return {
+            token: token,
+            expiresAt: expiresAt
+        };
+
+    }
+
+
+    function verifyExistingSession() {
+
+        const session =
+            getStoredSession();
+
+
+        if (!session) {
+            return;
+        }
+
+
+        const callbackName =
+            "sessionCallback_" +
+            Date.now() +
+            "_" +
+            Math.floor(
+                Math.random() * 100000
+            );
+
+
+        const script =
+            document.createElement(
+                "script"
+            );
+
+
+        let finished =
+            false;
+
+
+        const cleanup =
+            function() {
+
+                delete window[
+                    callbackName
+                ];
+
+
+                if (
+                    script.parentNode
+                ) {
+
+                    script.parentNode.removeChild(
+                        script
+                    );
+
+                }
+
+            };
+
+
+        const timeout =
+            setTimeout(
+                function() {
+
+                    if (finished) {
+                        return;
+                    }
+
+
+                    finished =
+                        true;
+
+
+                    cleanup();
+
+                },
+                10000
+            );
+
+
+        window[
+            callbackName
+        ] =
+            function(result) {
+
+                if (finished) {
+                    return;
+                }
+
+
+                finished =
+                    true;
+
+
+                clearTimeout(
+                    timeout
+                );
+
+
+                cleanup();
+
+
+                if (
+                    result &&
+                    result.ok === true &&
+                    result.authenticated === true
+                ) {
+
+                    if (
+                        result.expiresAt
+                    ) {
+
+                        localStorage.setItem(
+                            SESSION_EXPIRES_KEY,
+                            String(
+                                result.expiresAt
+                            )
+                        );
+
+                    }
+
+
+                    if (
+                        result.username
+                    ) {
+
+                        localStorage.setItem(
+                            USERNAME_KEY,
+                            result.username
+                        );
+
+                    }
+
+
+                    window.location.replace(
+                        DASHBOARD_URL
+                    );
+
+                } else {
+
+                    clearSession();
+
+                }
+
+            };
+
+
+        script.onerror =
+            function() {
+
+                clearTimeout(
+                    timeout
+                );
+
+                if (
+                    !finished
+                ) {
+
+                    finished =
+                        true;
+
+                    cleanup();
+
+                }
+
+            };
+
+
+        const params =
+            new URLSearchParams({
+
+                action:
+                    "verify",
+
+                token:
+                    session.token,
+
+                callback:
+                    callbackName
+
+            });
+
+
+        script.src =
+            API_URL +
+            "?" +
+            params.toString();
+
+
+        document.body.appendChild(
+            script
+        );
+
+    }
+
+
     passwordToggle.addEventListener(
         "click",
         function() {
@@ -1534,7 +1773,7 @@
 
     loginForm.addEventListener(
         "submit",
-        async function(event) {
+        function(event) {
 
             event.preventDefault();
 
@@ -1555,6 +1794,7 @@
                     "Silakan masukkan username terlebih dahulu."
                 );
 
+
                 usernameInput.focus();
 
                 return;
@@ -1570,44 +1810,10 @@
                     "Silakan masukkan password terlebih dahulu."
                 );
 
+
                 passwordInput.focus();
 
                 return;
-
-            }
-
-
-            if (
-                !API_URL ||
-                API_URL ===
-                    "GANTI_DENGAN_URL_GAS_LOGIN"
-            ) {
-
-                showModal(
-                    "error",
-                    "Sistem Belum Terhubung",
-                    "Endpoint login GAS belum dipasang."
-                );
-
-                return;
-
-            }
-
-
-            if (
-                rememberInput.checked
-            ) {
-
-                localStorage.setItem(
-                    "nawalaRememberUsername",
-                    username
-                );
-
-            } else {
-
-                localStorage.removeItem(
-                    "nawalaRememberUsername"
-                );
 
             }
 
@@ -1623,173 +1829,81 @@
             );
 
 
-            try {
-
-                const callbackName =
-                    "loginCallback_" +
-                    Date.now();
-
-
-                const script =
-                    document.createElement(
-                        "script"
-                    );
+            const callbackName =
+                "loginCallback_" +
+                Date.now() +
+                "_" +
+                Math.floor(
+                    Math.random() * 100000
+                );
 
 
-                const params =
-                    new URLSearchParams({
-                        action:
-                            "login",
-
-                        username:
-                            username,
-
-                        password:
-                            password,
-
-                        callback:
-                            callbackName
-
-                    });
+            const script =
+                document.createElement(
+                    "script"
+                );
 
 
-                const cleanup =
+            let finished =
+                false;
+
+
+            const cleanup =
+                function() {
+
+                    delete window[
+                        callbackName
+                    ];
+
+
+                    if (
+                        script.parentNode
+                    ) {
+
+                        script.parentNode.removeChild(
+                            script
+                        );
+
+                    }
+
+                };
+
+
+            const finish =
+                function() {
+
+                    if (
+                        finished
+                    ) {
+
+                        return false;
+
+                    }
+
+
+                    finished =
+                        true;
+
+
+                    cleanup();
+
+
+                    return true;
+
+                };
+
+
+            const timeout =
+                setTimeout(
                     function() {
 
-                        delete window[
-                            callbackName
-                        ];
-
-
                         if (
-                            script.parentNode
+                            !finish()
                         ) {
 
-                            script.parentNode.removeChild(
-                                script
-                            );
+                            return;
 
                         }
-
-                    };
-
-
-                const timeout =
-                    setTimeout(
-                        function() {
-
-                            cleanup();
-
-                            setLoading(
-                                false
-                            );
-
-
-                            showInlineStatus(
-                                "Server tidak merespons.",
-                                "error"
-                            );
-
-
-                            showModal(
-                                "error",
-                                "Koneksi Gagal",
-                                "Server login tidak merespons. Coba lagi beberapa saat."
-                            );
-
-                        },
-                        15000
-                    );
-
-
-                window[
-                    callbackName
-                ] =
-                    function(result) {
-
-                        clearTimeout(
-                            timeout
-                        );
-
-
-                        cleanup();
-
-
-                        setLoading(
-                            false
-                        );
-
-
-                        if (
-                            result &&
-                            result.success
-                        ) {
-
-                            showInlineStatus(
-                                "Login berhasil.",
-                                "success"
-                            );
-
-
-                            showModal(
-                                "success",
-                                "Login Berhasil",
-                                "Selamat datang. Dashboard akan dibuka."
-                            );
-
-
-                            /*
-                             * Untuk sementara setelah login:
-                             * dashboard/index.html
-                             *
-                             * Nanti setelah sistem session
-                             * selesai, URL ini kita sesuaikan.
-                             */
-                            setTimeout(
-                                function() {
-
-                                    window.location.href =
-                                        "index.html";
-
-                                },
-                                900
-                            );
-
-
-                        } else {
-
-                            showInlineStatus(
-                                result &&
-                                result.message
-                                    ? result.message
-                                    : "Username atau password salah.",
-                                "error"
-                            );
-
-
-                            showModal(
-                                "error",
-                                "Login Gagal",
-                                result &&
-                                result.message
-                                    ? result.message
-                                    : "Username atau password salah."
-                            );
-
-                        }
-
-                    };
-
-
-                script.onerror =
-                    function() {
-
-                        clearTimeout(
-                            timeout
-                        );
-
-
-                        cleanup();
 
 
                         setLoading(
@@ -1798,7 +1912,7 @@
 
 
                         showInlineStatus(
-                            "Gagal menghubungi server.",
+                            "Server tidak merespons.",
                             "error"
                         );
 
@@ -1806,49 +1920,204 @@
                         showModal(
                             "error",
                             "Koneksi Gagal",
-                            "Tidak dapat terhubung ke server login."
+                            "Server login tidak merespons. Coba lagi beberapa saat."
                         );
 
-                    };
-
-
-                script.src =
-                    API_URL +
-                    "?" +
-                    params.toString();
-
-
-                document.body.appendChild(
-                    script
+                    },
+                    15000
                 );
 
 
-            } catch (error) {
+            window[
+                callbackName
+            ] =
+                function(result) {
 
-                console.error(
-                    "LOGIN ERROR:",
-                    error
-                );
+                    if (
+                        !finish()
+                    ) {
 
+                        return;
 
-                setLoading(
-                    false
-                );
-
-
-                showInlineStatus(
-                    "Terjadi kesalahan.",
-                    "error"
-                );
+                    }
 
 
-                showModal(
-                    "error",
-                    "Terjadi Kesalahan",
-                    "Login tidak dapat diproses saat ini."
-                );
+                    clearTimeout(
+                        timeout
+                    );
 
-            }
+
+                    setLoading(
+                        false
+                    );
+
+
+                    if (
+                        result &&
+                        result.ok === true &&
+                        result.token
+                    ) {
+
+                        localStorage.setItem(
+                            SESSION_KEY,
+                            result.token
+                        );
+
+
+                        localStorage.setItem(
+                            USERNAME_KEY,
+                            result.username ||
+                            username
+                        );
+
+
+                        if (
+                            result.expiresAt
+                        ) {
+
+                            localStorage.setItem(
+                                SESSION_EXPIRES_KEY,
+                                String(
+                                    result.expiresAt
+                                )
+                            );
+
+                        }
+
+
+                        if (
+                            rememberInput.checked
+                        ) {
+
+                            localStorage.setItem(
+                                "nawalaRememberUsername",
+                                username
+                            );
+
+                        } else {
+
+                            localStorage.removeItem(
+                                "nawalaRememberUsername"
+                            );
+
+                        }
+
+
+                        showInlineStatus(
+                            "Login berhasil.",
+                            "success"
+                        );
+
+
+                        showModal(
+                            "success",
+                            "Login Berhasil",
+                            "Selamat datang. Dashboard akan dibuka."
+                        );
+
+
+                        setTimeout(
+                            function() {
+
+                                window.location.replace(
+                                    DASHBOARD_URL
+                                );
+
+                            },
+                            700
+                        );
+
+
+                        return;
+
+                    }
+
+
+                    showInlineStatus(
+                        result &&
+                        result.error
+                            ? result.error
+                            : "Username atau password salah.",
+                        "error"
+                    );
+
+
+                    showModal(
+                        "error",
+                        "Login Gagal",
+                        result &&
+                        result.error
+                            ? result.error
+                            : "Username atau password salah."
+                    );
+
+                };
+
+
+            script.onerror =
+                function() {
+
+                    if (
+                        !finish()
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    clearTimeout(
+                        timeout
+                    );
+
+
+                    setLoading(
+                        false
+                    );
+
+
+                    showInlineStatus(
+                        "Gagal menghubungi server.",
+                        "error"
+                    );
+
+
+                    showModal(
+                        "error",
+                        "Koneksi Gagal",
+                        "Tidak dapat terhubung ke server login."
+                    );
+
+                };
+
+
+            const params =
+                new URLSearchParams({
+
+                    action:
+                        "login",
+
+                    username:
+                        username,
+
+                    password:
+                        password,
+
+                    callback:
+                        callbackName
+
+                });
+
+
+            script.src =
+                API_URL +
+                "?" +
+                params.toString();
+
+
+            document.body.appendChild(
+                script
+            );
 
         }
     );
@@ -1859,7 +2128,11 @@
 
     loadRememberedUsername();
 
+
+    verifyExistingSession();
+
 </script>
+
 
 </body>
 </html>
