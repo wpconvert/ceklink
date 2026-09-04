@@ -1,4 +1,5 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbx9B2O_H5HUgbEdXMN0Rza7R3ZHKUnCm8qLHY0m08atL57zFfUmFhBMENNu9R85LznfGw/exec";
+const API_URL =
+    "https://script.google.com/macros/s/AKfycbx9B2O_H5HUgbEdXMN0Rza7R3ZHKUnCm8qLHY0m08atL57zFfUmFhBMENNu9R85LznfGw/exec";
 
 const MONITOR_LOGIN_PAGE_URL = "../index.html";
 const MONITOR_SESSION_KEY = "nawala_session";
@@ -25,7 +26,6 @@ const themeIcon = document.getElementById("themeIcon");
 const checkAllButton = document.getElementById("checkAllButton");
 const testTelegramButton = document.getElementById("testTelegramButton");
 const testNawalaButton = document.getElementById("testNawalaButton");
-
 const checkModal = document.getElementById("checkModal");
 const modalClose = document.getElementById("modalClose");
 const modalLoader = document.getElementById("modalLoader");
@@ -82,6 +82,7 @@ function redirectToLogin() {
     }
 
     sessionRedirecting = true;
+
     clearSession();
 
     window.location.replace(
@@ -95,6 +96,7 @@ function handleSessionExpired() {
     }
 
     sessionRedirecting = true;
+
     clearSession();
 
     showCustomModal(
@@ -128,7 +130,8 @@ function apiRequest(params) {
                 return;
             }
 
-            const token = getSessionToken();
+            const token =
+                getSessionToken();
 
             const callbackName =
                 "nawalaCallback_" +
@@ -419,6 +422,7 @@ async function addLink() {
     addButton.disabled = true;
 
     try {
+
         const result =
             await apiRequest({
                 action: "add",
@@ -508,12 +512,7 @@ async function testTelegram() {
     }
 
     testTelegramButton.disabled = true;
-
-    if (
-        testNawalaButton
-    ) {
-        testNawalaButton.disabled = true;
-    }
+    testNawalaButton.disabled = true;
 
     try {
 
@@ -526,7 +525,6 @@ async function testTelegram() {
             result &&
             result.success
         ) {
-
             await showCustomModal(
                 "success",
                 "Telegram Berhasil",
@@ -547,7 +545,6 @@ async function testTelegram() {
                 "Tutup",
                 false
             );
-
         }
 
     } catch (error) {
@@ -555,7 +552,6 @@ async function testTelegram() {
         if (
             !sessionRedirecting
         ) {
-
             await showCustomModal(
                 "error",
                 "Telegram Gagal",
@@ -564,18 +560,12 @@ async function testTelegram() {
                 "Tutup",
                 false
             );
-
         }
 
     } finally {
 
         testTelegramButton.disabled = false;
-
-        if (
-            testNawalaButton
-        ) {
-            testNawalaButton.disabled = false;
-        }
+        testNawalaButton.disabled = false;
 
     }
 }
@@ -600,12 +590,7 @@ async function testNawala() {
     }
 
     testTelegramButton.disabled = true;
-
-    if (
-        testNawalaButton
-    ) {
-        testNawalaButton.disabled = true;
-    }
+    testNawalaButton.disabled = true;
 
     try {
 
@@ -618,7 +603,6 @@ async function testNawala() {
             result &&
             result.success
         ) {
-
             await showCustomModal(
                 "success",
                 "Alert Terkirim",
@@ -639,7 +623,6 @@ async function testNawala() {
                 "Tutup",
                 false
             );
-
         }
 
     } catch (error) {
@@ -647,7 +630,6 @@ async function testNawala() {
         if (
             !sessionRedirecting
         ) {
-
             await showCustomModal(
                 "error",
                 "Alert Gagal",
@@ -656,18 +638,12 @@ async function testNawala() {
                 "Tutup",
                 false
             );
-
         }
 
     } finally {
 
         testTelegramButton.disabled = false;
-
-        if (
-            testNawalaButton
-        ) {
-            testNawalaButton.disabled = false;
-        }
+        testNawalaButton.disabled = false;
 
     }
 }
@@ -708,14 +684,30 @@ async function runFullCheck() {
         }
 
         modalText.textContent =
-            "Semua link sedang diperiksa. Mohon tunggu...";
+            "Checker sedang menunggu GitHub Actions...";
 
-        const completed =
-            await waitForCheckComplete();
+        const workflowResult =
+            await waitForWorkflowComplete();
 
-        if (!completed) {
+        if (
+            !workflowResult ||
+            !workflowResult.success
+        ) {
             throw new Error(
-                "Pengecekan dihentikan."
+                workflowResult &&
+                workflowResult.message
+                    ? workflowResult.message
+                    : "Status checker tidak tersedia."
+            );
+        }
+
+        if (
+            workflowResult.conclusion &&
+            workflowResult.conclusion !== "success"
+        ) {
+            throw new Error(
+                "GitHub Actions selesai dengan status: " +
+                workflowResult.conclusion
             );
         }
 
@@ -756,98 +748,99 @@ async function runFullCheck() {
                 error.message ||
                 "Gagal menjalankan pengecekan."
             );
-
         }
 
     } finally {
 
         activeCheck = false;
 
-        setCheckingControls(false);
+        setCheckingControls(
+            false
+        );
 
         render();
 
     }
 }
 
-async function waitForCheckComplete() {
-    while (true) {
+async function waitForWorkflowComplete() {
 
-        if (
-            sessionRedirecting
-        ) {
-            return false;
-        }
+    while (true) {
 
         await sleep(
             CHECK_POLL_INTERVAL_MS
         );
 
-        const result =
-            await getLatestLinks();
+        let result;
 
-        if (
-            sessionRedirecting
-        ) {
-            return false;
+        try {
+
+            result =
+                await apiRequest({
+                    action: "workflowStatus"
+                });
+
+        } catch (error) {
+
+            if (
+                sessionRedirecting
+            ) {
+                throw error;
+            }
+
+            modalText.textContent =
+                "Menghubungkan kembali ke status checker...";
+
+            continue;
         }
 
         if (
             !result ||
             !result.success
         ) {
+            modalText.textContent =
+                "Menunggu status checker...";
+
             continue;
         }
 
-        const data =
-            Array.isArray(
-                result.data
-            )
-                ? result.data
-                : [];
-
         if (
-            data.length === 0
+            !result.found
         ) {
-            return true;
+            modalText.textContent =
+                "GitHub Actions belum memulai checker...";
+
+            continue;
         }
 
-        const allChecked =
-            data.every(
-                function(item) {
+        if (
+            result.status ===
+            "queued"
+        ) {
+            modalText.textContent =
+                "Checker sedang dalam antrean GitHub Actions...";
 
-                    if (
-                        !item.lastChecked
-                    ) {
-                        return false;
-                    }
-
-                    const checkedTime =
-                        new Date(
-                            item.lastChecked
-                        ).getTime();
-
-                    return (
-                        checkedTime >=
-                        checkStartedAt - 10000
-                    );
-
-                }
-            );
+            continue;
+        }
 
         if (
-            allChecked
+            result.status ===
+            "in_progress"
         ) {
+            modalText.textContent =
+                "Checker sedang memeriksa semua link...";
 
-            links =
-                data;
-
-            render();
-
-            updateLastUpdate();
-
-            return true;
+            continue;
         }
+
+        if (
+            result.completed
+        ) {
+            return result;
+        }
+
+        modalText.textContent =
+            "Checker sedang diproses...";
     }
 }
 
@@ -866,6 +859,7 @@ async function getLatestLinks() {
         );
 
         return null;
+
     }
 }
 
@@ -875,13 +869,11 @@ function triggerSync() {
     })
     .catch(
         function(error) {
-
             return {
                 success: false,
                 status: "error",
                 message: error.message
             };
-
         }
     );
 }
@@ -914,6 +906,7 @@ function triggerSyncInBackground(
                     );
 
                     return;
+
                 }
 
                 console.log(
@@ -935,6 +928,7 @@ function triggerSyncInBackground(
 }
 
 function getLastSyncTrigger() {
+
     const value =
         localStorage.getItem(
             "nawalaLastSyncTrigger"
@@ -959,6 +953,7 @@ function getLastSyncTrigger() {
 }
 
 function setLastSyncTrigger() {
+
     localStorage.setItem(
         "nawalaLastSyncTrigger",
         String(
@@ -968,6 +963,7 @@ function setLastSyncTrigger() {
 }
 
 function shouldTriggerSync() {
+
     const lastSync =
         getLastSyncTrigger();
 
@@ -1008,7 +1004,6 @@ function setCheckingControls(
             delete checkAllButton.dataset.originalText;
 
         }
-
     }
 
     if (
@@ -1073,24 +1068,20 @@ function finishCheckModal() {
     const normalCount =
         links.filter(
             function(item) {
-
                 return (
                     item.status ===
                     "normal"
                 );
-
             }
         ).length;
 
     const nawalaCount =
         links.filter(
             function(item) {
-
                 return (
                     item.status ===
                     "nawala"
                 );
-
             }
         ).length;
 
@@ -1336,7 +1327,6 @@ function render() {
 
                 }
             );
-
     }
 
     linkTable.innerHTML =
@@ -1826,7 +1816,6 @@ function showCustomModal(
                     );
 
                 }
-
             }
 
             confirmButton.addEventListener(
@@ -1938,7 +1927,7 @@ async function deleteLink(
             !result.success
         ) {
 
-            await showCustomModal(
+            showCustomModal(
                 "error",
                 "Gagal Menghapus",
                 result &&
@@ -1950,7 +1939,6 @@ async function deleteLink(
             );
 
             return;
-
         }
 
         const loaded =
@@ -1984,7 +1972,7 @@ async function deleteLink(
             !sessionRedirecting
         ) {
 
-            await showCustomModal(
+            showCustomModal(
                 "error",
                 "Gagal Menghapus",
                 error.message ||
@@ -2170,6 +2158,8 @@ loadTheme();
 loadLinks()
     .then(
         function() {
+
             triggerSyncInBackground();
+
         }
     );
