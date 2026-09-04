@@ -155,19 +155,19 @@ function apiRequest(params) {
 
             let finished = false;
 
-            const timeout =
-                setTimeout(
-                    function() {
+        const timeout =
+            setTimeout(
+                function() {
 
-                        finishError(
-                            new Error(
-                                "Server tidak merespons."
-                            )
-                        );
+                    finishError(
+                        new Error(
+                            "Server tidak merespons."
+                        )
+                    );
 
-                    },
-                    15000
-                );
+                },
+                60000
+            );
 
             function cleanup() {
                 delete window[
