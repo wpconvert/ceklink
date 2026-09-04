@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbyjCX5TbD-37tW3C9tO009pdB6s3Jw8CU610qO73ltTNbOamq0OGDnd_SbKB5JTwkIq/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbx9B2O_H5HUgbEdXMN0Rza7R3ZHKUnCm8qLHY0m08atL57zFfUmFhBMENNu9R85LznfGw/exec";
 
 const MONITOR_LOGIN_PAGE_URL = "../index.html";
 const MONITOR_SESSION_KEY = "nawala_session";
