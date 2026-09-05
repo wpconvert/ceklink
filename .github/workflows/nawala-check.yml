@@ -3,9 +3,6 @@ name: Nawala Check
 on:
   workflow_dispatch:
 
-  schedule:
-    - cron: "17 * * * *"
-
 jobs:
   check:
     runs-on: ubuntu-latest
