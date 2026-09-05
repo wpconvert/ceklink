@@ -27,5 +27,6 @@ jobs:
       - name: Check domains
         env:
           GAS_URL: ${{ secrets.GAS_URL }}
+          GAS_API_KEY: ${{ secrets.GAS_API_KEY }}
         run: |
           python .github/workflows/check_nawala.py
