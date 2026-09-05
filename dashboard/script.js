@@ -1,5 +1,5 @@
 const API_URL =
-    "https://script.google.com/macros/s/AKfycbzDPftt1K-G2FLCqgmBMBYAr4P4FqEbp3LxIR4iGCrPCSc2riRtD_gleO2D_zSRGY-P/exec";
+    "https://script.google.com/macros/s/AKfycbwK-FW1iWpmcoOxMqgyaavOGGW8wo47qeVx1gwYuLjiMIyfdg1QKXYc8VCaomu9GV1M/exec";
 
 const MONITOR_LOGIN_PAGE_URL = "../index.html";
 const MONITOR_SESSION_KEY = "nawala_session";
