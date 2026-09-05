@@ -22,10 +22,7 @@ BLOCKLIST_FILES = [
 BLOCKLIST_WORKERS = 5
 UPDATE_WORKERS = 8
 
-REQUEST_TIMEOUT = (
-    10,
-    30,
-)
+REQUEST_TIMEOUT = (10, 30)
 
 
 def gas_params(action, **kwargs):
@@ -33,33 +30,26 @@ def gas_params(action, **kwargs):
         "action": action,
         "api_key": GAS_API_KEY,
     }
-
     params.update(kwargs)
-
     return params
 
 
 def get_session():
     session = requests.Session()
-
     session.headers.update({
         "User-Agent": "Nawala-Monitor-Checker/1.0"
     })
-
     return session
 
 
 def extract_domain(value):
-    value = str(
-        value or ""
-    ).strip().lower()
+    value = str(value or "").strip().lower()
 
     if not value:
         return ""
 
     if value.startswith("https://"):
         value = value[8:]
-
     elif value.startswith("http://"):
         value = value[7:]
 
@@ -74,11 +64,7 @@ def extract_domain(value):
     return value
 
 
-def request_json(
-    session,
-    url,
-    params=None
-):
+def request_json(session, url, params=None):
     response = session.get(
         url,
         params=params,
@@ -86,46 +72,29 @@ def request_json(
     )
 
     print(
-        f"HTTP {response.status_code}: "
-        f"{response.url}"
+        f"HTTP {response.status_code}: {response.url}"
     )
 
     if not response.ok:
-        print(
-            "Response error:",
-            response.text[:2000]
-        )
-
+        print("Response error:")
+        print(response.text[:2000])
         response.raise_for_status()
 
     try:
         return response.json()
-
     except ValueError as error:
-        print(
-            "Response bukan JSON:"
-        )
-        print(
-            response.text[:3000]
-        )
-
+        print("Response bukan JSON:")
+        print(response.text[:3000])
         raise RuntimeError(
-            "Server mengembalikan response "
-            "yang bukan JSON."
+            "Server mengembalikan response yang bukan JSON."
         ) from error
 
 
 def download_blocklist(filename):
-    url = (
-        BLOCKLIST_BASE_URL +
-        filename
-    )
-
+    url = BLOCKLIST_BASE_URL + filename
     session = get_session()
 
-    print(
-        f"Mengambil {filename}..."
-    )
+    print(f"Mengambil {filename}...")
 
     response = session.get(
         url,
@@ -133,27 +102,22 @@ def download_blocklist(filename):
     )
 
     print(
-        f"{filename}: HTTP "
-        f"{response.status_code}"
+        f"{filename}: HTTP {response.status_code}"
     )
 
     if not response.ok:
         print(
             f"{filename} response:"
         )
-
         print(
             response.text[:2000]
         )
-
         response.raise_for_status()
 
     blocked = set()
 
     for line in response.text.splitlines():
-
-        domain =
-            line.strip().lower()
+        domain = line.strip().lower()
 
         if not domain:
             continue
@@ -161,15 +125,10 @@ def download_blocklist(filename):
         if domain.startswith("#"):
             continue
 
-        domain =
-            extract_domain(
-                domain
-            )
+        domain = extract_domain(domain)
 
         if domain:
-            blocked.add(
-                domain
-            )
+            blocked.add(domain)
 
     return blocked
 
@@ -177,9 +136,7 @@ def download_blocklist(filename):
 def load_blocklist():
     all_blocked = set()
 
-    print(
-        "Mengambil blocklist..."
-    )
+    print("Mengambil blocklist...")
 
     with ThreadPoolExecutor(
         max_workers=BLOCKLIST_WORKERS
@@ -193,19 +150,11 @@ def load_blocklist():
             for filename in BLOCKLIST_FILES
         }
 
-        for future in as_completed(
-            futures
-        ):
-
-            filename =
-                futures[
-                    future
-                ]
+        for future in as_completed(futures):
+            filename = futures[future]
 
             try:
-
-                blocked =
-                    future.result()
+                blocked = future.result()
 
                 all_blocked.update(
                     blocked
@@ -217,12 +166,10 @@ def load_blocklist():
                 )
 
             except Exception as error:
-
                 print(
                     f"GAGAL BLOCKLIST "
                     f"{filename}: {error}"
                 )
-
                 raise
 
     print(
@@ -234,7 +181,6 @@ def load_blocklist():
 
 
 def get_links():
-
     if not GAS_URL:
         raise RuntimeError(
             "GAS_URL belum diset."
@@ -249,30 +195,20 @@ def get_links():
         "Mengambil daftar link dari GAS..."
     )
 
-    session =
-        get_session()
+    session = get_session()
 
-    data =
-        request_json(
-            session,
-            GAS_URL,
-            gas_params(
-                "list"
-            )
-        )
-
-    print(
-        "Response GAS:"
+    data = request_json(
+        session,
+        GAS_URL,
+        gas_params("list")
     )
 
+    print("Response GAS:")
     print(
         str(data)[:5000]
     )
 
-    if not data.get(
-        "success"
-    ):
-
+    if not data.get("success"):
         raise RuntimeError(
             "GAS menolak request: " +
             str(
@@ -283,102 +219,61 @@ def get_links():
             )
         )
 
-    links =
-        data.get(
-            "data",
-            []
-        )
-
-    return links
+    return data.get("data", [])
 
 
-def check_domain(
-    item,
-    blocked_domains
-):
-
-    domain =
-        extract_domain(
-            item.get(
-                "domain"
-            ) or
-            item.get(
-                "url"
-            )
-        )
+def check_domain(item, blocked_domains):
+    domain = extract_domain(
+        item.get("domain") or
+        item.get("url")
+    )
 
     if not domain:
-
         return {
-            "id":
-                item.get(
-                    "id"
-                ),
+            "id": item.get("id"),
             "domain": "",
             "status": "normal",
-            "error":
-                "Domain tidak valid."
+            "error": "Domain tidak valid."
         }
 
-    status =
-        (
-            "nawala"
-            if domain in blocked_domains
-            else "normal"
-        )
+    status = (
+        "nawala"
+        if domain in blocked_domains
+        else "normal"
+    )
 
     return {
-        "id":
-            item.get(
-                "id"
-            ),
-        "domain":
-            domain,
-        "status":
-            status,
+        "id": item.get("id"),
+        "domain": domain,
+        "status": status,
         "error": ""
     }
 
 
 def update_status(result):
-
-    item_id =
-        result.get(
-            "id"
-        )
-
-    status =
-        result.get(
-            "status"
-        )
+    item_id = result.get("id")
+    status = result.get("status")
 
     if not item_id:
-
         return {
             **result,
             "success": False,
-            "message":
-                "ID tidak ditemukan."
+            "message": "ID tidak ditemukan."
         }
 
-    session =
-        get_session()
+    session = get_session()
 
-    data =
-        request_json(
-            session,
-            GAS_URL,
-            gas_params(
-                "update",
-                id=item_id,
-                status=status
-            )
+    data = request_json(
+        session,
+        GAS_URL,
+        gas_params(
+            "update",
+            id=item_id,
+            status=status
         )
+    )
 
-    if not data.get(
-        "success"
-    ):
-
+    if not data.get("success"):
         raise RuntimeError(
             data.get(
                 "message",
@@ -389,36 +284,24 @@ def update_status(result):
     return {
         **result,
         "success": True,
-        "message":
-            data.get(
-                "message",
-                ""
-            )
+        "message": data.get(
+            "message",
+            ""
+        )
     }
 
 
 def main():
+    print("================================")
+    print("NAWALA CHECKER")
+    print("================================")
 
     print(
-        "================================"
+        f"GAS_URL tersedia: {bool(GAS_URL)}"
     )
 
     print(
-        "NAWALA CHECKER"
-    )
-
-    print(
-        "================================"
-    )
-
-    print(
-        f"GAS_URL tersedia: "
-        f"{bool(GAS_URL)}"
-    )
-
-    print(
-        f"GAS_API_KEY tersedia: "
-        f"{bool(GAS_API_KEY)}"
+        f"GAS_API_KEY tersedia: {bool(GAS_API_KEY)}"
     )
 
     if not GAS_URL:
@@ -431,11 +314,9 @@ def main():
             "GAS_API_KEY belum diset."
         )
 
-    blocked_domains =
-        load_blocklist()
+    blocked_domains = load_blocklist()
 
-    links =
-        get_links()
+    links = get_links()
 
     print(
         f"Total link yang dicek: "
@@ -443,11 +324,9 @@ def main():
     )
 
     if not links:
-
         print(
             "Tidak ada link untuk dicek."
         )
-
         return
 
     results = []
@@ -460,7 +339,7 @@ def main():
         max_workers=UPDATE_WORKERS
     ) as executor:
 
-        check_futures = [
+        futures = [
             executor.submit(
                 check_domain,
                 item,
@@ -469,32 +348,21 @@ def main():
             for item in links
         ]
 
-        for future in as_completed(
-            check_futures
-        ):
+        for future in as_completed(futures):
+            result = future.result()
+            results.append(result)
 
-            result =
-                future.result()
+    normal_count = sum(
+        1
+        for item in results
+        if item["status"] == "normal"
+    )
 
-            results.append(
-                result
-            )
-
-    normal_count =
-        sum(
-            1
-            for item in results
-            if item["status"] ==
-            "normal"
-        )
-
-    nawala_count =
-        sum(
-            1
-            for item in results
-            if item["status"] ==
-            "nawala"
-        )
+    nawala_count = sum(
+        1
+        for item in results
+        if item["status"] == "nawala"
+    )
 
     print(
         f"Normal: {normal_count}"
@@ -515,7 +383,7 @@ def main():
         max_workers=UPDATE_WORKERS
     ) as executor:
 
-        update_futures = {
+        futures = {
             executor.submit(
                 update_status,
                 result
@@ -524,17 +392,10 @@ def main():
             if result.get("id")
         }
 
-        for future in as_completed(
-            update_futures
-        ):
-
-            result =
-                update_futures[
-                    future
-                ]
+        for future in as_completed(futures):
+            result = futures[future]
 
             try:
-
                 future.result()
 
                 success_count += 1
@@ -547,7 +408,6 @@ def main():
                 )
 
             except Exception as error:
-
                 failed_count += 1
 
                 print(
@@ -570,13 +430,6 @@ def main():
         f"Update gagal: "
         f"{failed_count}"
     )
-
-    if failed_count > 0:
-
-        print(
-            "Ada update yang gagal, "
-            "tetapi checker tetap selesai."
-        )
 
     print(
         "================================"
